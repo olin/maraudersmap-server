@@ -107,6 +107,7 @@ def get_bind(id):
 	return None
 
 def post_bind(username, place, x, y, signals):
+	print signals
 	return binds.insert({"username": username,
 		"place": place,
 		"x": x,
@@ -347,7 +348,7 @@ def route_position(id):
 		return jsonify(position=position)
 
 	if request.method == "DELETE":
-		delete_position(username)
+		delete_position(ObjectId(id))
 		return '', 204
 
 
