@@ -41,7 +41,10 @@ def get_user(username):
 	return None
 
 def put_user(username, alias = ''):
-	if not re.compile('^[a-z]+$').match(username):
+	if not re.compile('^[a-z]+$').match(username):  # This regex says 
+													# only allow lowercase
+													# letters, at least one
+													# letter long.
 		raise Exception("Invalid username: %s" % username)
 	if get_user(username):
 		delete_user(username)
