@@ -2,8 +2,14 @@ from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
-connection = Connection('localhost', 27017)
-db = connection.maumap
+#mongodb_uri = "mongodb://localhost:27017/"
+#db_name = 'maumap'
+#mongodb_uri = "mongodb://:31867"
+#db_name = 'heroku_app3954850'
+
+connection = Connection("ds031867.mongolab.com", 31867)
+db = connection["heroku_app3954850"]
+db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
 
 users = db.users
 binds = db.binds
@@ -21,7 +27,7 @@ users.create_index("username", unique=True)
 # Intermediate API
 # ----------------
 
-import json, re, numpy, copy, datetime
+import json, re, numpy, copy, datetime, os
 from operator import itemgetter
 #from jsonpatch import JsonPatch, JsonPatchException
 
@@ -378,4 +384,5 @@ print json.dumps(get_positions())
 
 if __name__ == "__main__":
 	app.debug = True
-	app.run()
+	port = int(os.environ.get('PORT', 5000))
+	app.run(host='0.0.0.0', port=port)
