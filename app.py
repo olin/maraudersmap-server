@@ -129,14 +129,10 @@ def nearest_binds(signals, limit = 10, **crit):
 	for bind in binds.find(crit):
 		signalsB = bind['signals']
 
-		macs = set(signalsA.keys())
-		macs.update(signalsB.keys())
-		print(numpy.array([float(signalsA.get(k, 0)) for k in macs]))
-		print(numpy.array([float(signalsB.get(k, 0)) for k in macs]))
+		macs = set(signalsA.keys()).intersection(signalsB.keys())
 		dist = numpy.linalg.norm(
 			numpy.array([float(signalsA.get(k, 0)) for k in macs]) -
 			numpy.array([float(signalsB.get(k, 0)) for k in macs]))
-		print(dist)
 		matches.append((dist, bind))
 
 	return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0))[0:limit]]
