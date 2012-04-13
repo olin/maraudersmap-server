@@ -248,10 +248,10 @@ def route_places():
 		return jsonify(places=get_places(**crit))
 
 	if request.method == 'POST':
-		name = request.form['name']
 		floor = request.form['floor']
+		name = request.form['name']
 		alias = request.form.get('alias', '')
-		id = post_place(name, floor, alias)
+		id = post_place(floor, name, alias)
 		return json_content(201, place=get_place(id))
 
 @app.route("/places/<id>", methods=['GET', 'DELETE'])
