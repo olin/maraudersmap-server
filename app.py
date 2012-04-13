@@ -254,7 +254,7 @@ def route_places():
 		id = post_place(floor, name, alias)
 		return json_content(201, place=get_place(id))
 
-@app.route("/places/<id>", methods=['GET', 'DELETE'])
+@app.route("/places/<id>", methods=['GET', 'PUT', 'DELETE'])
 def route_place(id):
 	place = get_place(ObjectId(id))
 	if not place:
@@ -262,6 +262,13 @@ def route_place(id):
 
 	if request.method == 'GET':
 		return jsonify(place=place)
+
+	if request.method == 'PUT':
+		put_place(ObjectId(id),
+			request.form['floor'],
+			request.form['name'],
+			request.form.get('alias', ''))
+		return json_content(200, place=get_place(ObjectId(id)))
 
 	#if request.method == 'PATCH':
 	#	patch = JsonPatch(request.json)
