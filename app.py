@@ -112,8 +112,8 @@ def get_bind(id):
 def post_bind(username, place, x, y, signals):
 	return binds.insert({"username": username,
 		"place": place,
-		"x": x,
-		"y": y,
+		"x": float(x),
+		"y": float(y),
 		"signals": {k.lower(): v for k, v in signals.items()}})
 
 def delete_bind(id):
@@ -300,8 +300,8 @@ def route_binds():
 	if request.method == 'POST':
 		username = request.form['username']
 		place = request.form['place']
-		x = request.form['x']
-		y = request.form['y']
+		x = float(request.form['x'])
+		y = float(request.form['y'])
 		signals = {}
 		for k, v in request.form.items():
 			grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
