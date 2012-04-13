@@ -16,13 +16,14 @@ binds = db.binds
 places = db.places
 positions = db.position
 
+"""
 binds.drop()
 users.drop()
 places.drop()
 positions.drop()
 
-
 users.create_index("username", unique=True)
+"""
 
 # Intermediate API
 # ----------------
@@ -130,8 +131,9 @@ def nearest_binds(signals, limit = 10, **crit):
 
 		macs = set(signalsA.keys())
 		macs.update(signalsB.keys())
-		dist = numpy.linalg.norm(numpy.array([signalsA.get(k, 0) for k in macs]) -
-			numpy.array([signalsB.get(k, 0) for k in macs]))
+		dist = numpy.linalg.norm(
+			numpy.array([float(signalsA.get(k, 0)) for k in macs]) -
+			numpy.array([float(signalsB.get(k, 0)) for k in macs]))
 		matches.append((dist, bind))
 
 	return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0))[0:limit]]
@@ -291,7 +293,7 @@ def route_binds():
 		for k, v in request.args.items():
 			grp = re.match(r'^nearest\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k)
 			if grp:
-				signals[grp.group(1)] = v
+				signals[grp.group(1)] = float(v)
 		if len(signals.keys()):
 			return jsonify(binds=nearest_binds(signals, **crit))
 		else:
@@ -306,7 +308,7 @@ def route_binds():
 		for k, v in request.form.items():
 			grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
 			if grp:
-				signals[grp.group(1)] = v
+				signals[grp.group(1)] = float(v)
 		print signals
 		if not get_user(username):
 			return json_error(400, 'User with name %s does not exist.' % username)
