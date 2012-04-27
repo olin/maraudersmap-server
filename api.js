@@ -4,9 +4,15 @@ function callback(call, cb) {
 	call.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); });
 }
 
+// API object
+
 var Api = {
 	getPositions: function (cb) {
 		callback($.get('/api/positions/'), cb)
+	},
+
+	getPlaces: function (cb) {
+		callback($.get('/api/places/'), cb)
 	},
 
 	getUser: function (username, cb) {
