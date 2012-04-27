@@ -15,6 +15,10 @@ var Api = {
 
 	getBind: function (id, cb) {
 		callback($.get('/api/binds/' + id), cb)
+	},
+
+	getPlace: function (id, cb) {
+		callback($.get('/api/places/' + id), cb)
 	}
 };
 

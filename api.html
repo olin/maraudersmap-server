@@ -3,6 +3,9 @@
 <html>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script src="api.js"></script>
+<style>pre {
+ width:600px;
+}</style>
 <body>
 	<h1>API test</h1>
 <script>
@@ -22,17 +25,22 @@ function results(heading) {
 
 	var posRes = results('Current positions')
 	Api.getPositions(function (err, json) {
-		$(posRes).text(JSON.stringify(json))
+		$(posRes).text(JSON.stringify(json, null, '   '))
 
 		var bindRes = results('A bind')
 		Api.getBind(json.positions[0].bind, function (err, json) {
-			$(bindRes).text(JSON.stringify(json))
+			$(bindRes).text(JSON.stringify(json, null, '   '))
+
+			var placeRes = results('A place')
+			Api.getPlace(json.bind.place, function (err, json) {
+				$(placeRes).text(JSON.stringify(json, null, '   '))
+			})
 		})
 	})
 
 	var userRes = results('User jceipek')
 	Api.getUser('jceipek', function (err, json) {
-		$(userRes).text(JSON.stringify(json))
+		$(userRes).text(JSON.stringify(json, null, '   '))
 	})
 })();
 
