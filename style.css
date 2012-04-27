@@ -1,0 +1,15 @@
+/*
+ * The div that contains the map image
+ */
+div#map {
+  border: 5px solid red;
+  position: relative;
+}
+
+img#map-img {
+   display: block; 
+}
+
+img.user {
+  position: absolute;  
+}
