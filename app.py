@@ -191,7 +191,7 @@ def delete_position(username):
 # --------
 
 from flask import Flask, jsonify, make_response, request, redirect, url_for
-app = Flask(__name__)
+app = Flask(__name__, '/static')
 
 def json_error(code, msg):
 	response = make_response(json.dumps({"error": 404, "message": msg}), 404)
@@ -203,18 +203,18 @@ def json_content(code = 200, **kargs):
 	response.headers['Content-Type'] = 'application/json'
 	return response
 
-@app.route("/")
+@app.route("/api/")
 def route_index():
 	return jsonify(binds='/binds/', users='/users', places='/places/', positions='/positions/')
 
 # Users
 
-@app.route("/users/", methods=['GET'])
+@app.route("/api/users/", methods=['GET'])
 def route_users():
 	if request.method == 'GET':
 		return jsonify(users=get_users())
 
-@app.route("/users/<username>", methods=['GET', 'PUT', 'DELETE'])
+@app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
 	if request.method == 'PUT':
 		username = request.form['username']
@@ -241,7 +241,7 @@ def route_user(username):
 
 # Places
 
-@app.route("/places/", methods=['GET', 'POST'])
+@app.route("/api/places/", methods=['GET', 'POST'])
 def route_places():
 	if request.method == 'GET':
 		critkeys = ['alias', 'floor', 'name', 'alias']
@@ -255,7 +255,7 @@ def route_places():
 		id = post_place(floor, name, alias)
 		return json_content(201, place=get_place(id))
 
-@app.route("/places/<id>", methods=['GET', 'PUT', 'DELETE'])
+@app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE'])
 def route_place(id):
 	place = get_place(ObjectId(id))
 	if not place:
@@ -283,7 +283,7 @@ def route_place(id):
 
 # Binds
 
-@app.route("/binds/", methods=['GET', 'POST'])
+@app.route("/api/binds/", methods=['GET', 'POST'])
 def route_binds():
 	if request.method == 'GET':
 		critkeys = ['username', 'place', 'x', 'y']
@@ -316,7 +316,7 @@ def route_binds():
 		id = post_bind(username, ObjectId(place), x, y, signals)
 		return json_content(201, bind=get_bind(id))
 
-@app.route("/binds/<id>", methods=['GET', 'DELETE'])
+@app.route("/api/binds/<id>", methods=['GET', 'DELETE'])
 def route_bind(id):
 	bind = get_bind(ObjectId(id))
 	if not bind:
@@ -331,7 +331,7 @@ def route_bind(id):
 
 # Positions
 
-@app.route("/positions/", methods=['GET', 'POST'])
+@app.route("/api/positions/", methods=['GET', 'POST'])
 def route_positions():
 	if request.method == 'GET':
 		critkeys = ['username', 'bind']
@@ -348,7 +348,7 @@ def route_positions():
 		id = post_position(username, ObjectId(bind))
 		return json_content(201, position=get_position(id))
 
-@app.route("/positions/<id>", methods=['GET', 'DELETE'])
+@app.route("/api/positions/<id>", methods=['GET', 'DELETE'])
 def route_position(id):
 	position = get_position(ObjectId(id))
 	if not position:

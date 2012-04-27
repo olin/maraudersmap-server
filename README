@@ -1,0 +1,10 @@
+When first running locally, do:
+
+    sudo pip install virtualenv
+    sudo virtualenv venv --distribute
+    source venv/bin/activate
+    sudo pip install -r requirements.txt
+
+Then every time locally running:
+
+    source venv/bin/activate
