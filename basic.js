@@ -21,10 +21,10 @@ $(function () {
   Api.getPositions(function (err, json) {
     var positions = json.positions;
     console.log(positions);
-    for (var i; i <= positions.length; i++) {
+    for (var i=0; i < positions.length; i++) {
       Api.getBind(positions[i].bind, function (err, json) {
         var bind = json.bind;
-        addUserIcon(bind.x, bind.y);
+        addUserIcon(bind.x*imgWidth, bind.y*imgHeight);
       });
     }
   });
