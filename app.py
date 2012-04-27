@@ -191,7 +191,7 @@ def delete_position(username):
 # --------
 
 from flask import Flask, jsonify, make_response, request, redirect, url_for
-app = Flask(__name__, '/static')
+app = Flask(__name__, '/ui')
 
 def json_error(code, msg):
 	response = make_response(json.dumps({"error": 404, "message": msg}), 404)
