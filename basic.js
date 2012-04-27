@@ -15,21 +15,32 @@ $(function () {
   $('#map-img').mousedown(function(eventObject) {
     var mouseX = eventObject.pageX - $('#map-img').offset().left;
     var mouseY = eventObject.pageY - $('#map-img').offset().top;
-
-    var user = document.createElement('img');
-    $(user).prop({'class': 'user', 'alt': 'Julian', 'src': 'Feet Raster.png'});
-
-    $(user).on('load', function () {
-      var userPosX = mouseX - user.width/2.0;
-      var userPosY = mouseY - user.height/2.0;
-      $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
-    });
+    addUserIcon(mouseX, mouseY);
   });
 
-  //api.getPositions()
+  Api.getPositions(function (err, json) {
+    var positions = json.positions;
+    console.log(positions);
+    for (var i; i <= positions.length; i++) {
+      Api.getBind(positions[i].bind, function (err, json) {
+        var bind = json.bind;
+        addUserIcon(bind.x, bind.y);
+      });
+    }
+  });
 
 
 })
+
+function addUserIcon(x, y) {
+  var user = document.createElement('img');
+  $(user).prop({'class': 'user', 'alt': 'Julian', 'src': 'Feet Raster.png'});
+  $(user).on('load', function () {
+      var userPosX = x - user.width/2.0;
+      var userPosY = y - user.height/2.0;
+      $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
+  });
+}
 
 // Function from https://github.com/voituk/Misc/blob/master/js/hash.js
 function parseQuery(str, separator) {
