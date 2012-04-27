@@ -3,6 +3,7 @@ $(function () {
   var queryDict = parseQuery(window.location.search);
   console.log(queryDict);
 
+  // Get the image height as soon as the image loads
   $('#map-img').on('load', function () {
     var imgWidth = $('#map-img').width();
     var imgHeight = $('#map-img').height();
@@ -10,6 +11,7 @@ $(function () {
     $('#size').text(imgWidth + " X " + imgHeight);
   })
 
+  // Put user icons at the locations of mouse clicks on mouseclick on the map image
   $('#map-img').mousedown(function(eventObject) {
     var mouseX = eventObject.pageX - $('#map-img').offset().left;
     var mouseY = eventObject.pageY - $('#map-img').offset().top;
@@ -22,9 +24,9 @@ $(function () {
       var userPosY = mouseY - user.height/2.0;
       $(user).css({'left': userPosX, 'top': userPosY}).appendTo($('#map'));
     });
-
-
   });
+
+  //api.getPositions()
 
 
 })
