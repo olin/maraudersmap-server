@@ -1,11 +1,23 @@
+;(function () {
+
+function callback(call, cb) {
+	call.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); });
+}
+
 var Api = {
 	getPositions: function (cb) {
-		$.get('/api/positions/')
-			.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); })	
+		callback($.get('/api/positions/'), cb)
 	},
 
 	getUser: function (username, cb) {
-		$.get('/api/users/' + username)
-			.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); })	
+		callback($.get('/api/users/' + username), cb)
+	},
+
+	getBind: function (id, cb) {
+		callback($.get('/api/binds/' + id), cb)
 	}
 };
+
+this.Api = Api;
+
+})();
