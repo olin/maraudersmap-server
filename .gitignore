@@ -1,8 +1,5 @@
-*.class
-
-# Package Files #
-*.jar
-*.war
-*.ear
-*.*.*.swp
-
+venv
+*.pyc
+.DS_Store
+.*.*.swp
+*.*.orig
