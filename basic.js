@@ -4,9 +4,11 @@ $(function () {
   console.log(queryDict);
 
   // Get the image height as soon as the image loads
+  var imgWidth;
+  var imgHeight;
   $('#map-img').on('load', function () {
-    var imgWidth = $('#map-img').width();
-    var imgHeight = $('#map-img').height();
+    imgWidth = $('#map-img').width();
+    imgHeight = $('#map-img').height();
 
     $('#size').text(imgWidth + " X " + imgHeight);
   })
