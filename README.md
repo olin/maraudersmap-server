@@ -30,3 +30,16 @@ and/or restarted relatively easily
 
 * Standards and standard libraries will be leveraged where available, i.e. JSON for communication general good practices
 * Made open and involve as many students as possible; perhaps it can be leveraged in future applications?
+
+
+
+### When first running locally, do:
+
+    sudo pip install virtualenv
+    sudo virtualenv venv --distribute
+    source venv/bin/activate
+    sudo pip install -r requirements.txt
+
+### Then every time locally running:
+
+    source venv/bin/activate
