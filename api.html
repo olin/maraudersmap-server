@@ -2,23 +2,10 @@
 
 <html>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="api.js"></script>
 <body>
 	<h1>API test</h1>
 <script>
-
-// api code
-
-var Api = {
-	getPositions: function (cb) {
-		$.get('/api/positions/')
-			.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); })	
-	},
-
-	getUser: function (username, cb) {
-		$.get('/api/users/' + username)
-			.success(function (json) { cb(0, json); }).error(function (err) { cb(err, null); })	
-	}
-}
 
 // testing code
 
