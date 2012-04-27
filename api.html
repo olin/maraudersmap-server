@@ -19,16 +19,20 @@ function results(heading) {
 }
 
 (function () {
+
 	var posRes = results('Current positions')
 	Api.getPositions(function (err, json) {
 		$(posRes).text(JSON.stringify(json))
-	})
-})();
 
-(function () {
-	var posRes = results('User jceipek')
+		var bindRes = results('A bind')
+		Api.getBind(json.positions[0].bind, function (err, json) {
+			$(bindRes).text(JSON.stringify(json))
+		})
+	})
+
+	var userRes = results('User jceipek')
 	Api.getUser('jceipek', function (err, json) {
-		$(posRes).text(JSON.stringify(json))
+		$(userRes).text(JSON.stringify(json))
 	})
 })();
 
