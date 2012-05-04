@@ -14,7 +14,7 @@ db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
 users = db.users
 binds = db.binds
 places = db.places
-positions = db.position
+positions = db.positions
 
 """
 binds.drop()
@@ -162,8 +162,12 @@ function (key, values) {
 	return newest
 }
 """)
-		col = positions.map_reduce(map, reduce, 'current_positions', query=crit)
-		return [__format_position(v['value']) for v in col.find()]
+                try:
+		    col = positions.map_reduce(map, reduce, 'current_positions', query=crit)
+		    return [__format_position(v['value']) for v in col.find()]
+                except Exception as e:
+                    print 'Error: %s' % e
+                    return []
 
 def get_position(id):
 	pos = positions.find_one(id)
