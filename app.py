@@ -23,7 +23,7 @@ places.drop()
 positions.drop()
 
 users.create_index("username", unique=True)
-"""
+#"""
 
 # Intermediate API
 # ----------------
