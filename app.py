@@ -141,7 +141,7 @@ def nearest_binds(signals, limit = 10, **crit):
 # post_position('tryan', loc_id)
 
 def __format_position(pos):
-	return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind']), "date": pos['date']}
+	return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind']), "date": pos['date'].isoformat()}
 
 def get_positions(history=False, **crit):
 	if history:
