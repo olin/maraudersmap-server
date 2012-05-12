@@ -1,6 +1,3 @@
 [submodule "static"]
 	path = static
 	url = git://github.com/ohack/maraudersmap-ui.git
-[submodule "maraudersmap-ui"]
-	path = maraudersmap-ui
-	url = git://github.com/ohack/maraudersmap-ui.git
