@@ -147,12 +147,13 @@ def get_positions(history=False, **crit):
 	if history:
 		return [__format_position(pos) for pos in positions.find(crit)]
 	else:
-		map = Code("""
+		try:
+			map = Code("""
 function () {
 	emit(this.username, this)
 }
 """)
-		reduce = Code("""
+			reduce = Code("""
 function (key, values) {
 	var newest;
 	for (var i = 0; i < values.length; i++) {
@@ -162,8 +163,10 @@ function (key, values) {
 	return newest
 }
 """)
-		col = positions.map_reduce(map, reduce, 'current_positions', query=crit)
-		return [__format_position(v['value']) for v in col.find()]
+			col = positions.map_reduce(map, reduce, 'current_positions', query=crit)
+			return [__format_position(v['value']) for v in col.find()]
+		except Error as e:
+			return []
 
 def get_position(id):
 	pos = positions.find_one(id)
