@@ -16,14 +16,12 @@ binds = db.binds
 places = db.places
 positions = db.position
 
-"""
 binds.drop()
 users.drop()
 places.drop()
 positions.drop()
 
 users.create_index("username", unique=True)
-"""
 
 # Intermediate API
 # ----------------
@@ -141,7 +139,7 @@ def nearest_binds(signals, limit = 10, **crit):
 # post_position('tryan', loc_id)
 
 def __format_position(pos):
-	return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind'])}
+	return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind']), "date": pos['date']}
 
 def get_positions(history=False, **crit):
 	if history:
@@ -369,7 +367,7 @@ def route_position(id):
 # Testing
 # -------
 
-
+"""
 p1 = post_place('AC4', 'Room 419', 'Sky Fortress')
 p2 = post_place('AC2', 'Room 219', 'The Aqualab')
 
@@ -390,6 +388,7 @@ post_position('kpletcher', b2)
 print "Current user location:"
 print json.dumps(get_positions(True, username='tryan'))
 print json.dumps(get_positions())
+"""
 
 # Launch
 
