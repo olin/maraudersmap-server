@@ -365,7 +365,7 @@ def route_position(id):
 # Testing
 # -------
 
-"""
+
 p1 = post_place('AC4', 'Room 419', 'Sky Fortress')
 p2 = post_place('AC2', 'Room 219', 'The Aqualab')
 
@@ -386,7 +386,6 @@ post_position('kpletcher', b2)
 print "Current user location:"
 print json.dumps(get_positions(True, username='tryan'))
 print json.dumps(get_positions())
-"""
 
 # Launch
 
