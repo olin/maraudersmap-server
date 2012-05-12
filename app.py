@@ -16,12 +16,14 @@ binds = db.binds
 places = db.places
 positions = db.position
 
+"""
 binds.drop()
 users.drop()
 places.drop()
 positions.drop()
 
 users.create_index("username", unique=True)
+"""
 
 # Intermediate API
 # ----------------
