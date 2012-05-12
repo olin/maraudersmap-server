@@ -184,7 +184,8 @@ def put_position(id, username, bind):
 def post_position(username, bind):
 	return positions.insert({
 		"username": username,
-		"bind": bind
+		"bind": bind,
+		"date": datetime.datetime.now()
 		})
 
 def delete_position(username):
