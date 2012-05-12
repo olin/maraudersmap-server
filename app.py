@@ -122,18 +122,19 @@ def delete_bind(id):
 
 def nearest_binds(signals, limit = 10, **crit):
 	signalsA = {k.lower(): v for k, v in signals.items()}
+        crit['$or'] = []
 	for k, v in signalsA.items():
-		crit['signals.' + k] = {"$exists": True}
+                crit['$or'].append({('signals.%s' % k): {"$exists": True}})
 
 	matches = []
-	for bind in binds.find(crit):
+        for bind in binds.find(crit):
 		signalsB = bind['signals']
 
 		macs = set(signalsA.keys()).intersection(signalsB.keys())
-		dist = numpy.linalg.norm(
+                dist = numpy.linalg.norm(
 			numpy.array([float(signalsA.get(k, 0)) for k in macs]) -
 			numpy.array([float(signalsB.get(k, 0)) for k in macs]))
-		matches.append((dist, bind))
+                matches.append((dist, bind))
 
 	return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0))[0:limit]]
 
@@ -295,9 +296,10 @@ def route_binds():
 		crit = {key: request.args[key] for key in list(set(critkeys) & set(request.args.keys()))}
 		signals = {}
 		for k, v in request.args.items():
-			grp = re.match(r'^nearest\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k)
+			grp = re.match(r'^nearest\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
 			if grp:
 				signals[grp.group(1)] = float(v)
+
 		if len(signals.keys()):
 			return jsonify(binds=nearest_binds(signals, **crit))
 		else:
@@ -313,7 +315,6 @@ def route_binds():
 			grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
 			if grp:
 				signals[grp.group(1)] = float(v)
-		print signals
 		if not get_user(username):
 			return json_error(400, 'User with name %s does not exist.' % username)
 		if not get_place(ObjectId(place)):
