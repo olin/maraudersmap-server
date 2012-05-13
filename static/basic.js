@@ -54,7 +54,7 @@ $(function () {
         var bind = json.bind;
         // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
         // We correct for this by multiplying by imgWidth and imgHeight.
-        addUserIcon(bind.username, bind.x*imgWidth, bind.y*imgHeight);
+        addUserIcon(positions[i].username, bind.x*imgWidth, bind.y*imgHeight);
       });
     }
   });
