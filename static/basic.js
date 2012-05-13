@@ -22,6 +22,27 @@ $(function () {
   $('#map-img').on('load', function () {
     imgWidth = $('#map-img').width();
     imgHeight = $('#map-img').height();
+
+
+
+
+    // Request the position of all users and place markers there
+    Api.getPositions(function (err, json) {
+      var positions = json.positions;
+      console.log(positions);
+      for (var i=0; i < positions.length; i++) {
+        (function (bindID, uname, imgW, imgH) {
+          Api.getBind(bindID, function (err, json) {
+            var bind = json.bind;
+            // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
+            // We correct for this by multiplying by imgWidth and imgHeight.
+            addUserIcon(uname, bind.x*imgW, bind.y*imgH);
+          });    
+        })(positions[i].bind, positions[i].username, imgWidth, imgHeight);
+      }
+    });
+
+
   })
 
   // If the user clicks on the map and the map is in placement mode, post the user's location on click
@@ -45,21 +66,7 @@ $(function () {
   });
   
 
-  // Request the position of all users and place markers there
-  Api.getPositions(function (err, json) {
-    var positions = json.positions;
-    console.log(positions);
-    for (var i=0; i < positions.length; i++) {
-      (function (bindID, uname, imgW, imgH) {
-        Api.getBind(bindID, function (err, json) {
-          var bind = json.bind;
-          // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
-          // We correct for this by multiplying by imgWidth and imgHeight.
-          addUserIcon(uname, bind.x*imgW, bind.y*imgH);
-        });    
-      })(positions[i].bind, positions[i].username, imgWidth, imgHeight);
-    }
-  });
+
 
 
 })
