@@ -6,6 +6,7 @@ $(function () {
   console.log(queryDict);
 
   var visibleUsers = {}; // Will keep track of users and their positions
+  var allBinds = {}; // Will keep track of all binds to reduce request count
   
   var postedPlace; //Keeps track of the place the user will post from the dialog (if the user decides to create a custom bind)
   // If the page was launched from the client in order to create a new bind
@@ -23,16 +24,22 @@ $(function () {
                    imgWidth = $('#map-img').width();
                    imgHeight = $('#map-img').height();
                    
-                  
-                   updateUsers(visibleUsers, imgWidth, imgHeight, function () {
+                   
+                   Api.getBinds(function (err, json) {
+
+                     for (var i=0; i < json.binds.length; i++) {
+                          allBinds[json.binds[i].id] = json.binds[i];
+                     }
+
+
+                   updateUsers(visibleUsers, allBinds, imgWidth, imgHeight, function () {
 
                                setInterval(function() {
                                            // Update user positions every second; may need to increase this delay to deal with server load
-                                           updateUsers(visibleUsers, imgWidth, imgHeight, function () {})
+                                           updateUsers(visibleUsers, allBinds, imgWidth, imgHeight, function () {})
                                            }, 1000);
-            
                                });
-
+                   });
                    });
   
   // If the user clicks on the map and the map is in placement mode, post the user's location on click
@@ -222,7 +229,10 @@ function placementIndicator() {
     $(guide).appendTo($('#map'));
 }
 
-function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
+
+
+
+function updateUsers(usersObject, existingBinds, boundsWidth, boundsHeight, cb) {
     
                      var newUsers = {};
 
@@ -231,31 +241,33 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
                                       console.log(positions);
         
                                       for (var i=0; i < positions.length; i++) {
+
+                                      var bindID = positions[i].bind;
+                                      var username = positions[i].username;
+
+                                      if (existingBinds[bindID] != undefined) {
+                                                  var bind = existingBinds[bindID];
+                                                  associateUserMarkerWithBind(usersObject, username, bind, boundsWidth, boundsHeight);
+                                      } else {
+
                                       //Anonymous function to create a local scope for the variables the callback needs to operate.
                                       (function (bindID, uname) {
                                        Api.getBind(bindID, function (err, json) {
                                                    var bind = json.bind;
-                                                   // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
-                                                   // We correct for this by multiplying by boundsWidth and boundsHeight.
-                                                   
-                                                   if (usersObject[uname] == undefined) {
-                                                     addUserMarker(uname, bind.x*boundsWidth, bind.y*boundsHeight);
-                                                     usersObject[uname] = {'x': bind.x, 'y':bind.y};    
-                                                   } else {
-                                                     moveUserMarkerTo(uname, bind.x*boundsWidth, bind.y*boundsHeight);
-                                                     usersObject[uname] = {'x': bind.x, 'y':bind.y}; 
-                                                   }
-                                                   
-        
+                                                   existingBinds[bindID] = bind;
+                                                   associateUserMarkerWithBind(usersObject, uname, bind, boundsWidth, boundsHeight);                                                   
                                                    });
-                                       })(positions[i].bind, positions[i].username);
+                                       })(bindID, username);
+
+                                      }
+
                                        newUsers[positions[i].username] = true;
                                       }
                                        for (var uname in usersObject) {
                                          if (usersObject.hasOwnProperty(uname)) { // Make sure that the attribute belongs to the instance and not to the prototype
                                            if (newUsers[uname] != true) {
                                               delete usersObject[uname]; 
-                                              $('#map').removeChild($('#'+uname));
+                                              $('#'+uname).remove();
                                            }
                                          }  
                                        }
@@ -265,6 +277,19 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
                                       });
 
 
+}
+
+// Create a user marker if necessary. Otherwise, move existing user marker
+function associateUserMarkerWithBind(usersObject, uname, bind, boundsWidth, boundsHeight) {
+                                                     // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
+                                                   // We correct for this by multiplying by boundsWidth and boundsHeight.
+                             if (usersObject[uname] == undefined) {
+                               addUserMarker(uname, bind.x*boundsWidth, bind.y*boundsHeight);
+                               usersObject[uname] = {'x': bind.x, 'y':bind.y};    
+                             } else {
+                               moveUserMarkerTo(uname, bind.x*boundsWidth, bind.y*boundsHeight);
+                               usersObject[uname] = {'x': bind.x, 'y':bind.y}; 
+                             }   
 }
 
 // Add an icon to represent a user with username at a specified x,y position in pixels
