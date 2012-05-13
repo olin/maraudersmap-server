@@ -20,6 +20,10 @@ Api.getPlace = function (id, cb) {
 	callback($.get('/api/places/' + id), cb);
 };
 
+Api.getBinds = function (cb) {
+	callback($.get('/api/binds/'), cb);
+};
+
 Api.getPositions = function (cb) {
 	callback($.get('/api/positions/'), cb);
 };
