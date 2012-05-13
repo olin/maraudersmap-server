@@ -50,12 +50,14 @@ $(function () {
     var positions = json.positions;
     console.log(positions);
     for (var i=0; i < positions.length; i++) {
-      Api.getBind(positions[i].bind, function (err, json) {
-        var bind = json.bind;
-        // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
-        // We correct for this by multiplying by imgWidth and imgHeight.
-        addUserIcon(positions[i].username, bind.x*imgWidth, bind.y*imgHeight);
-      });
+      function (bindID, uname) {
+        Api.getBind(bindID, function (err, json) {
+          var bind = json.bind;
+          // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
+          // We correct for this by multiplying by imgWidth and imgHeight.
+          addUserIcon(uname, bind.x*imgWidth, bind.y*imgHeight);
+        });    
+      } (positions[i].bind, positions[i].username);
     }
   });
 
