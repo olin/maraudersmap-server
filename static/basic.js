@@ -50,14 +50,14 @@ $(function () {
     var positions = json.positions;
     console.log(positions);
     for (var i=0; i < positions.length; i++) {
-      (function (bindID, uname) {
+      (function (bindID, uname, imgW, imgH) {
         Api.getBind(bindID, function (err, json) {
           var bind = json.bind;
           // Note that bind.x and bind.y are relative numbers rather than absolute pixel locations
           // We correct for this by multiplying by imgWidth and imgHeight.
-          addUserIcon(uname, bind.x*imgWidth, bind.y*imgHeight);
+          addUserIcon(uname, bind.x*imgW, bind.y*imgH);
         });    
-      })(positions[i].bind, positions[i].username);
+      })(positions[i].bind, positions[i].username, imgWidth, imgHeight);
     }
   });
 
