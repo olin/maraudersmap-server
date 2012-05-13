@@ -50,7 +50,7 @@ $(function () {
                           
                           Api.postBind(queryDict.username, postedPlace.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
                                        console.log(err);          
-                                       addUserIcon(queryDict.username, mouseX, mouseY);
+                                       addUserMarker(queryDict.username, mouseX, mouseY);
                                        var bind = json.bind;
                                        
                                        Api.postPosition(queryDict.username, bind.id, function (err, json) {
