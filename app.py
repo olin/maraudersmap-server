@@ -208,7 +208,14 @@ def delete_position(username):
 # --------
 
 from flask import Flask, jsonify, make_response, request, redirect, url_for
+import fwolin
 app = Flask(__name__, '/ui')
+
+# Use fwol.in's unified authentication mechanism.
+# This requires us to set an environment variable for this application
+# to encrypt the user's session.
+fwolin.enable_auth(app)
+Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 
 def json_error(code, msg):
 	response = make_response(json.dumps({"error": 404, "message": msg}), 404)
