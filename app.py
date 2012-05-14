@@ -141,10 +141,21 @@ def nearest_binds(signals, limit = 10, **crit):
 # Positions
 # post_position('tryan', loc_id)
 
-def __format_position(pos):
-	return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind']), "date": pos['date'].isoformat()}
+def __format_position(pos, extended=False):
+	if extended:
+		bind = binds.find_one(pos['bind'])
+		place = places.find_one(bind['place'])
+		return {
+			"id": str(pos['_id']), 'username': pos['username'], "date": pos['date'].isoformat(), "bind": str(pos['bind']),
+			"extended": {
+				"bind": __format_bind(bind),
+				"place": __format_place(place)
+			}
+		}
+	else:
+		return {"id": str(pos['_id']), 'username': pos['username'], "bind": str(pos['bind']), "date": pos['date'].isoformat()}
 
-def get_positions(history=False, **crit):
+def get_positions(history=False, extended=False, **crit):
 	if history:
 		return [__format_position(pos) for pos in positions.find(crit)]
 	else:
@@ -165,7 +176,7 @@ function (key, values) {
 }
 """)
 			col = positions.map_reduce(map, reduce, 'current_positions', query=crit)
-			return [__format_position(v['value']) for v in col.find()]
+			return [__format_position(v['value'], extended) for v in col.find()]
 		except Exception as e:
 			print 'Error: %s' % e
 			return []
@@ -208,6 +219,10 @@ def json_content(code = 200, **kargs):
 	response = make_response(json.dumps(kargs), code)
 	response.headers['Content-Type'] = 'application/json'
 	return response
+
+@app.route("/")
+def route_root():
+	return redirect('/ui/index.html')
 
 @app.route("/api/")
 def route_index():
@@ -342,7 +357,7 @@ def route_positions():
 	if request.method == 'GET':
 		critkeys = ['username', 'bind']
 		crit = {key: request.args[key] for key in list(set(critkeys) & set(request.args.keys()))}
-		return jsonify(positions=get_positions(request.args.has_key('history'), **crit))
+		return jsonify(positions=get_positions(request.args.has_key('history'), request.args.has_key('extended'), **crit))
 
 	if request.method == 'POST':
 		username = request.form['username']
