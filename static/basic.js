@@ -78,7 +78,7 @@ function createLocationDialog(cb) {
     var dialogHeader = document.createElement('div');
     $(dialogHeader).prop({'class': 'modal-header'});
     $(dialogHeader).appendTo(dialog);
-    
+   
     var dialogTitle = document.createElement('h3');
     $(dialogTitle).html("Select your Location (1/2)");
     $(dialogTitle).appendTo(dialogHeader);
@@ -307,8 +307,9 @@ function addUserMarker(username, x, y) {
 // Move a user marker with username to a specified x,y position in pixels
 function moveUserMarkerTo(username, x, y) {
     var user = $('#'+username);
-    var userPosX = x - user.width/2.0;
-    var userPosY = y - user.height/2.0;
+    // width is a function since JQuery returns a list of things (in this case with one element)
+    var userPosX = x - user.width()/2.0;
+    var userPosY = y - user.height()/2.0;
     $('#'+username).css({'left': userPosX, 'top': userPosY});
 }
 
