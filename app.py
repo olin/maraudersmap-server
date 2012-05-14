@@ -223,6 +223,11 @@ def route_root():
 
 @app.route("/local/")
 def route_local():
+	try:
+		port = str(int(request.args.get('port', '')))
+	except Exception, e:
+		return """<h1>Invalid port.</h1>"""
+
 	return """
 <h1>Authorizing local client...</h1>
 <form id="auth" method="post" action="http://localhost:%s/">
@@ -233,7 +238,7 @@ def route_local():
 <script>
 document.getElementById('auth').submit()
 </script>
-""" % (cgi.escape(request.args.get('port', '')),
+""" % (cgi.escape(port),
 	cgi.escape(request.cookies.get('browserid', '')),
 	cgi.escape(request.cookies.get('session', '')))
 
