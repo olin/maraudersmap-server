@@ -9,3 +9,4 @@ numpy==1.6.1
 pymongo==2.1.1
 requests==0.11.1
 wsgiref==0.1.2
+-e git+git://github.com/ohack/fwolin-python.git#egg=fwolin
