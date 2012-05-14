@@ -204,11 +204,11 @@ def post_position(username, bind):
 def delete_position(username):
 	positions.remove({"username": username})
 
-# REST API
-# --------
+# Server
+# ------
 
 from flask import Flask, jsonify, make_response, request, redirect, url_for
-import fwolin
+import fwolin, cgi
 app = Flask(__name__, '/ui')
 
 # Use fwol.in's unified authentication mechanism.
@@ -216,6 +216,29 @@ app = Flask(__name__, '/ui')
 # to encrypt the user's session.
 #fwolin.enable_auth(app)
 Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
+
+@app.route("/")
+def route_root():
+	return redirect('/ui/index.html')
+
+@app.route("/local/")
+def route_local():
+	return """
+<h1>Authorizing local client...</h1>
+<form id="auth" method="post" action="http://localhost:%s/">
+<input type="hidden" name="browserid" value="%s">
+<input type="hidden" name="session" value="%s">
+<button type="submit">I'm impatient! Manually authorize me!</button>
+</form>
+<script>
+document.getElementById('auth').submit()
+</script>
+""" % (cgi.escape(request.args.get('port', '')),
+	cgi.escape(request.cookies.get('browserid', '')),
+	cgi.escape(request.cookies.get('session', '')))
+
+# REST API
+# --------
 
 def json_error(code, msg):
 	response = make_response(json.dumps({"error": 404, "message": msg}), 404)
@@ -226,10 +249,6 @@ def json_content(code = 200, **kargs):
 	response = make_response(json.dumps(kargs), code)
 	response.headers['Content-Type'] = 'application/json'
 	return response
-
-@app.route("/")
-def route_root():
-	return redirect('/ui/index.html')
 
 @app.route("/api/")
 def route_index():
