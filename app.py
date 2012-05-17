@@ -48,7 +48,7 @@ def get_user(username):
 	return None
 
 def put_user(username, alias = ''):
-	if not re.compile('^[a-z]+$').match(username):
+	if not re.compile('^[a-zA-Z\.]+$').match(username):
 		raise Exception("Invalid username: %s" % username)
 	if get_user(username):
 		delete_user(username)
