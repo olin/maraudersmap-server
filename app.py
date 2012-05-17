@@ -120,6 +120,7 @@ def post_bind(username, place, x, y, signals):
 def delete_bind(id):
 	binds.remove(id)
 
+# Dot product between two signal vectors (union of routers)
 def nearest_binds(signals, limit = 10, **crit):
 	signalsA = {k.lower(): v for k, v in signals.items()}
         crit['$or'] = []
@@ -130,13 +131,13 @@ def nearest_binds(signals, limit = 10, **crit):
         for bind in binds.find(crit):
 		signalsB = bind['signals']
 
-		macs = set(signalsA.keys()).intersection(signalsB.keys())
-                dist = numpy.linalg.norm(
-			numpy.array([float(signalsA.get(k, 0)) for k in macs]) -
+		macs = set(signalsA.keys()).union(signalsB.keys())
+                dist = numpy.dot(
+			numpy.array([float(signalsA.get(k, 0)) for k in macs]),
 			numpy.array([float(signalsB.get(k, 0)) for k in macs]))
                 matches.append((dist, bind))
 
-	return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0))[0:limit]]
+	return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0), reverse=True)[0:limit]]
 
 # Positions
 # post_position('tryan', loc_id)
