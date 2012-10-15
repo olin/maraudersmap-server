@@ -1,11 +1,13 @@
+import os
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
 mongodb_uri = "mongodb://localhost:27017/"
 db_name = 'maumap'
-#mongodb_uri = "ds031867.mongolab.com"
-#db_name = 'heroku_app3954850'
+if os.environ.get('PORT'):
+	mongodb_uri = "ds031867.mongolab.com"
+	db_name = 'heroku_app3954850'
 
 connection = Connection(mongodb_uri, 31867)
 db = connection[db_name]
@@ -269,10 +271,11 @@ def route_login():
 	if request.args.get('code'):
 		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in'}, cookies=dict(session=request.args.get('code')))
 		if r.status_code == 200:
+			print r.text
 			session['email'] = r.json
 			session['code'] = request.args.get('code')
 			return redirect('/')	
-	return redirect('http://fwol.in/login/?callback=http://localhost:5000/login/')
+	return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/')
 
 @app.before_request
 def before_request():
