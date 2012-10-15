@@ -2,14 +2,14 @@ from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
-#mongodb_uri = "mongodb://localhost:27017/"
-#db_name = 'maumap'
-#mongodb_uri = "mongodb://:31867"
+mongodb_uri = "mongodb://localhost:27017/"
+db_name = 'maumap'
+#mongodb_uri = "ds031867.mongolab.com"
 #db_name = 'heroku_app3954850'
 
-connection = Connection("ds031867.mongolab.com", 31867)
-db = connection["heroku_app3954850"]
-db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
+connection = Connection(mongodb_uri, 31867)
+db = connection[db_name]
+#db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
 
 users = db.users
 binds = db.binds
@@ -23,7 +23,7 @@ places.drop()
 positions.drop()
 
 users.create_index("username", unique=True)
-#"""
+"""
 
 # Intermediate API
 # ----------------
@@ -212,14 +212,9 @@ def delete_position(username):
 # Server
 # ------
 
-from flask import Flask, jsonify, make_response, request, redirect, url_for
-import fwolin, cgi
+from flask import Flask, jsonify, make_response, request, redirect, url_for, escape, Response, session
 app = Flask(__name__, '/ui')
 
-# Use fwol.in's unified authentication mechanism.
-# This requires us to set an environment variable for this application
-# to encrypt the user's session.
-fwolin.enable_auth(app)
 Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 
 @app.route("/")
@@ -243,9 +238,9 @@ def route_local():
 <script>
 document.getElementById('auth').submit()
 </script>
-""" % (cgi.escape(port),
-	cgi.escape(request.cookies.get('browserid', '')),
-	cgi.escape(request.cookies.get('session', '')))
+""" % (escape(port),
+	escape(request.cookies.get('browserid', '')),
+	escape(request.cookies.get('session', '')))
 
 # REST API
 # --------
@@ -259,6 +254,40 @@ def json_content(code = 200, **kargs):
 	response = make_response(json.dumps(kargs), code)
 	response.headers['Content-Type'] = 'application/json'
 	return response
+
+# Login
+
+import requests, sys
+
+AUTH_CACHE = dict()
+
+def get_session_email():
+	return session['email'] or AUTH_CACHE.get(request.headers.get('Authorization'), None)
+
+@app.route('/login/')
+def route_login():
+	if request.args.get('code'):
+		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in'}, cookies=dict(session=request.args.get('code')))
+		if r.status_code == 200:
+			session['email'] = r.json
+			session['code'] = request.args.get('code')
+			return redirect('/')	
+	return redirect('http://fwol.in/login/?callback=http://localhost:5000/login/')
+
+@app.before_request
+def before_request():
+	if request.path.startswith('/api/') and not get_session_email():
+		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in', 'Authorization': request.headers.get('Authorization')})
+		if r.status_code == 200:
+			AUTH_CACHE[request.headers.get('Authorization')] = r.json
+			return
+		return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
+
+@app.route("/api/me", methods=['GET'])
+def route_me():
+	return Response(json.dumps(get_session_email()), 200, {'content-type': 'application/json'})
+
+# Entry point
 
 @app.route("/api/")
 def route_index():
