@@ -264,7 +264,7 @@ import requests, sys
 AUTH_CACHE = dict()
 
 def get_session_email():
-	return session['email'] or AUTH_CACHE.get(request.headers.get('Authorization'), None)
+	return AUTH_CACHE.get(request.headers.get('Authorization'), None) or session.get('email')
 
 @app.route('/login/')
 def route_login():
