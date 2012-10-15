@@ -271,8 +271,7 @@ def route_login():
 	if request.args.get('code'):
 		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in'}, cookies=dict(session=request.args.get('code')))
 		if r.status_code == 200:
-			print r.text
-			session['email'] = r.json
+			session['email'] = json.loads(r.text)
 			session['code'] = request.args.get('code')
 			return redirect('/')	
 	return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/')
