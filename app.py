@@ -268,11 +268,11 @@ def get_session_email():
 
 @app.route('/login/')
 def route_login():
-	if request.args.get('code'):
-		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in'}, cookies=dict(session=request.args.get('code')))
+	if request.args.get('sessionid'):
+		r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in'}, params={'sessionid': request.args.get('sessionid')})
 		if r.status_code == 200:
 			session['email'] = json.loads(r.text)
-			session['code'] = request.args.get('code')
+			session['sessionid'] = request.args.get('sessionid')
 			return redirect('/')	
 	return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/')
 
