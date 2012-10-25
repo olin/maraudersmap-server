@@ -273,8 +273,8 @@ def route_login():
 		if r.status_code == 200:
 			session['email'] = json.loads(r.text)
 			session['sessionid'] = request.args.get('sessionid')
-			return redirect('/')	
-	return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/')
+			return redirect('/')
+	return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/&external')
 
 @app.before_request
 def before_request():
