@@ -261,34 +261,49 @@ def json_content(code = 200, **kargs):
 
 import requests, sys
 
+def load_sessionid(sessionid):
+    # Read a sessionid query parameter and save it in our session.
+    # TODO: XXX: Cache sessionids so external auth doesn't hit fwol.in every time.
+    r = requests.get('http://fwol.in/api/me', headers={'host': 'fwol.in'}, params={'sessionid': request.args.get('sessionid')}) #TODO: XXX: Make this https when fwol.in supports it
+    if r.status_code == 200:
+        user = json.loads(r.text)
+        session['email'] = user.get('email')
+        session['sessionid'] = sessionid
+        return user.get('email')
+    return None
+
 def get_admin_users():
     # TODO: XXX: This should be a legitimate database lookup
     return ['julian.ceipek@students.olin.edu', 'timothy.ryan@students.olin.edu']
 
 def get_session_email():
+    # We cache sessions using the session['email'] property.
+    # TODO: XXX: When a fwol.in read 401's, then we have to clear this property.
     return session.get('email')
 
 @app.route('/login/')
 def route_login():
+    # Sessionids are stashed by the before_request function.
+    # Regardless of success, don't infinite loop if we've returned from fwol.in login.
     if request.args.get('sessionid'):
-        r = requests.get('http://fwol.in/api/me', headers={'host': 'fwol.in'}, params={'sessionid': request.args.get('sessionid')}) #TODO: XXX: Make this https when fwol.in supports it
-        if r.status_code == 200:
-            session['email'] = json.loads(r.text)
-            session['sessionid'] = request.args.get('sessionid')
-            return redirect('/')
+        return redirect('/')
+
+    # Redirect to fwol.in to begin authentication.
     return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/&external')
 
 @app.before_request
 def before_request():
+    # Load and stash sessionids in our current session.
+    if request.args.get('sessionid'):
+        load_sessionid(request.args.get('sessionid'))
+
+    # Prevent unauthorized /api/* access.
     if request.path.startswith('/api/') and not get_session_email():
-        r = requests.get('https://ohack-fwolin.herokuapp.com/api/me', headers={'host': 'fwol.in', 'Authorization': request.headers.get('Authorization')})
-        if r.status_code == 200:
-            AUTH_CACHE[request.headers.get('Authorization')] = r.json
-            return
         return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
 
 @app.route("/api/me", methods=['GET'])
 def route_me():
+    # TODO: XXX: fwolin/api/me returns an object now, this should too really.
     return Response(json.dumps(get_session_email()), 200, {'content-type': 'application/json'})
 
 # Entry point
@@ -307,13 +322,13 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        if username == get_session_email() or get_session_email() in get_admin_users():
-            username = request.form['username']
-            alias = request.form.get('alias', '')
-            put_user(username, alias)
-            return jsonify(user=get_user(username))
-        else:
-            return json_error(401, "Only %s and admins can add a user with the username %s!" % (username, username))
+        if username != get_session_email() and get_session_email() not in get_admin_users():
+            return json_error(401, "Only %s and admins can add a user with the username %s." % (username, username))
+
+        username = request.form['username']
+        alias = request.form.get('alias', '')
+        put_user(username, alias)
+        return jsonify(user=get_user(username))
 
     user = get_user(username)
     if not user:
@@ -329,11 +344,11 @@ def route_user(username):
     #   return jsonify(user=get_user(obj['username']))
 
     if request.method == "DELETE":
-        if username == get_session_email() or get_session_email() in get_admin_users():
-            delete_user(username)
-            return '', 204
-        else:
-            return json_error(401, "Only %s and admins can add a user with the username %s!" % (username, username))
+        if username != get_session_email() and get_session_email() not in get_admin_users():
+            return json_error(401, "Only %s and admins can delete a user with the username %s." % (username, username))
+
+        delete_user(username)
+        return '', 204
 
 # Places
 
@@ -400,24 +415,24 @@ def route_binds():
             return jsonify(binds=get_binds(**crit))
 
     if request.method == 'POST':
-        if username == get_session_email() or get_session_email() in get_admin_users():
-            username = request.form['username']
-            place = request.form['place']
-            x = float(request.form['x'])
-            y = float(request.form['y'])
-            signals = {}
-            for k, v in request.form.items():
-                grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
-                if grp:
-                    signals[grp.group(1)] = float(v)
-            if not get_user(username):
-                return json_error(400, 'User with name %s does not exist.' % username)
-            if not get_place(ObjectId(place)):
-                return json_error(400, 'Place with id %s does not exist.' % place)
-            id = post_bind(username, ObjectId(place), x, y, signals)
-            return json_content(201, bind=get_bind(id))
-        else:
-            return json_error(401, "Only %s and admins can bind %s to a place!" % (username, username))
+        if username != get_session_email() and get_session_email() not in get_admin_users():
+            return json_error(401, "Only %s and admins can bind %s to a place." % (username, username))
+
+        username = request.form['username']
+        place = request.form['place']
+        x = float(request.form['x'])
+        y = float(request.form['y'])
+        signals = {}
+        for k, v in request.form.items():
+            grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
+            if grp:
+                signals[grp.group(1)] = float(v)
+        if not get_user(username):
+            return json_error(400, 'User with name %s does not exist.' % username)
+        if not get_place(ObjectId(place)):
+            return json_error(400, 'Place with id %s does not exist.' % place)
+        id = post_bind(username, ObjectId(place), x, y, signals)
+        return json_content(201, bind=get_bind(id))
 
 @app.route("/api/binds/<id>", methods=['GET', 'DELETE'])
 def route_bind(id):
@@ -429,12 +444,11 @@ def route_bind(id):
         return jsonify(bind=bind)
 
     if request.method == "DELETE":
-        if bind['username'] == get_session_email():
-            delete_bind(ObjectId(id))
-            return '', 204
-        else:
+        if bind['username'] != get_session_email():
             return json_error(401, "Only %s and admins can add delete binds by %s!" % (bind['username'], bind['username']))
 
+        delete_bind(ObjectId(id))
+        return '', 204
 
 # Positions
 
@@ -448,15 +462,15 @@ def route_positions():
     if request.method == 'POST':
         username = request.form['username']
         bind = request.form['bind']
-        if username == get_session_email() or get_session_email() in get_admin_users():
-            if not get_user(username):
-                return json_error(400, 'User with name %s does not exist.' % username)
-            if not get_bind(ObjectId(bind)):
-                return json_error(400, 'Bind with id %s does not exist.' % bind)
-            id = post_position(username, ObjectId(bind))
-            return json_content(201, position=get_position(id))
-        else:
+        if username != get_session_email() and get_session_email() not in get_admin_users():
             return json_error(401, "Only %s and admins can add %s at a position!" % (username, username))
+
+        if not get_user(username):
+            return json_error(400, 'User with name %s does not exist.' % username)
+        if not get_bind(ObjectId(bind)):
+            return json_error(400, 'Bind with id %s does not exist.' % bind)
+        id = post_position(username, ObjectId(bind))
+        return json_content(201, position=get_position(id))
 
 @app.route("/api/positions/<id>", methods=['GET', 'DELETE'])
 def route_position(id):
@@ -468,12 +482,11 @@ def route_position(id):
         return jsonify(position=position)
 
     if request.method == "DELETE":
-        if username == get_session_email() or get_session_email() in get_admin_users():
-            delete_position(username)
-            return '', 204
-        else:
+        if username != get_session_email() and get_session_email() not in get_admin_users():
             return json_error(401, "Only %s and admins can delete a position owned by %s!" % (username, username))
 
+        delete_position(username)
+        return '', 204
 
 # Testing
 # -------
