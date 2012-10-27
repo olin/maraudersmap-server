@@ -222,28 +222,6 @@ Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 def route_root():
     return redirect('/ui/index.html')
 
-@app.route("/local/")
-def route_local():
-    try:
-        port = str(int(request.args.get('port', '')))
-    except Exception, e:
-        return """<h1>Invalid port.</h1>"""
-
-    return """
-<h1>Authorizing local client...</h1>
-<form id="auth" method="post" action="http://localhost:%s/">
-<input type="hidden" name="browserid" value="%s">
-<input type="hidden" name="session" value="%s">
-<button type="submit">I'm impatient! Manually authorize me!</button>
-</form>
-<script>
-document.getElementById('auth').submit()
-</script>
-""" % (escape(port),
-    escape(request.cookies.get('browserid', '')),
-    escape(request.cookies.get('session', '')))
-
-
 # REST API
 # --------
 
