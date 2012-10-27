@@ -1,27 +1,21 @@
-import os, urlparse
+import os
+from urlparse import urlsplit
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
-MONGODB_HOST = 'localhost'
-MONGODB_PORT = 27017
-MONGODB_DB = 'maumap'
-MONGODB_USER = MONGODB_PASSWORD = None
+MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017/maumap')
+parsed_mongo = urlsplit(MONGO_URL)
+db_name = parsed_mongo.path[1:]
+# Get your DB
+print('Connecting to %s [db %s]' % (MONGO_URL, db_name))
+db = Connection(MONGO_URL)[db_name]
+# Authenticate
+if '@' in MONGO_URL:
+    user_pass = parsed_mongo.netloc.split('@')[0].split(':')
+    db.authenticate(user_pass[0], user_pass[1])
 
-if os.environ.get('MONGOLAB_URI'):
-    url = urlparse.urlparse(os.environ.get('MONGOLAB_URI'))
-    MONGODB_USER = url.username
-    MONGODB_PASSWORD = url.password
-    MONGODB_HOST = url.hostname
-    MONGODB_PORT = url.port
-    MONGODB_DB = url.path[1:]
-
-connection = Connection(MONGODB_HOST, MONGODB_PORT)
-db = connection[MONGODB_DB]
-
-if MONGODB_USER and MONGODB_PASSWORD:
-    db.authenticate(MONGODB_USER, MONGODB_PASSWORD)
-
+# Shortcuts for collections.
 users = db.users
 binds = db.binds
 places = db.places
@@ -284,9 +278,12 @@ def before_request():
     if request.args.get('sessionid'):
         load_sessionid(request.args.get('sessionid'))
 
-    # Prevent unauthorized /api/* access.
-    if request.path.startswith('/api/') and not get_session_email():
-        return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
+    # Prevent unauthorized access.
+    if not get_session_email():
+        if request.path.startswith('/api/'):
+            return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
+        if request.path.startswith('/ui/'):
+            return redirect('/login/');
 
 @app.route("/api/me", methods=['GET'])
 def route_me():
