@@ -295,7 +295,10 @@ def route_login():
 def before_request():
     # Load and stash sessionids in our current session.
     if request.args.get('sessionid'):
+        print "There was a request here: "+request.args.get('sessionid')
         load_sessionid(request.args.get('sessionid'))
+    else:
+        print "There was a big problem here."
 
     # Prevent unauthorized /api/* access.
     if request.path.startswith('/api/') and not get_session_email():
