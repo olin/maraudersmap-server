@@ -1,17 +1,26 @@
-import os
+import os, urlparse
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
-mongodb_uri = "mongodb://localhost:27017/"
-db_name = 'maumap'
-if os.environ.get('PORT'):
-    mongodb_uri = "ds031867.mongolab.com"
-    db_name = 'heroku_app3954850'
+MONGODB_HOST = 'localhost'
+MONGODB_PORT = 27017
+MONGODB_DB = 'maumap'
+MONGODB_USER = MONGODB_PASSWORD = None
 
-connection = Connection(mongodb_uri, 31867)
-db = connection[db_name]
-#db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
+if os.environ.get('MONGOLAB_URI'):
+    url = urlparse.urlparse(os.environ.get('MONGOLAB_URI'))
+    MONGODB_USER = url.username
+    MONGODB_PASSWORD = url.password
+    MONGODB_HOST = url.hostname
+    MONGODB_PORT = url.port
+    MONGODB_DB = url.path[1:]
+
+connection = Connection(MONGODB_HOST, MONGODB_PORT)
+db = connection[MONGODB_DB]
+
+if MONGODB_USER and MONGODB_PASSWORD:
+    db.authenticate(MONGODB_USER, MONGODB_PASSWORD)
 
 users = db.users
 binds = db.binds
