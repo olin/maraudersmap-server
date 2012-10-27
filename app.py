@@ -41,9 +41,6 @@ def __format_user(user):
     return {"username": user['username'], "alias": user['alias']}
 
 def get_users(**crit):
-    print "LOGGING"
-    print [__format_user(user) for user in users.find(crit)]
-    print "ENDLOGGING"
     return [__format_user(user) for user in users.find(crit)]
 
 def get_user(username):
