@@ -48,7 +48,7 @@ def get_users(**crit):
         if not user.get('email'):
             print user['username']
             user.update({"username": user['username'], "email": '', "alias": user['alias']})
-            user.save()
+            users.save()
 
     return [__format_user(user) for user in users.find(crit)]
 
