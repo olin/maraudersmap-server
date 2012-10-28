@@ -307,7 +307,7 @@ def route_users():
 def route_user(username):
     if request.method == 'PUT':
         if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can add a user with the username %s." % (username, username))
+            return json_error(401, "Only %s and admins can add a user with the username %s. You are %s" % (username, username, get_session_email()))
 
         username = request.form['username']
         alias = request.form.get('alias', '')
