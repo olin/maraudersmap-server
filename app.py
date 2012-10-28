@@ -46,7 +46,7 @@ def __format_user(user):
 def get_users(**crit):
     for user in users.find(crit):
         if not user.get('email'):
-            user.update({$set : {'email', ''}})
+            user.update({'$set' : {'email', ''}})
     return [__format_user(user) for user in users.find(crit)]
 
 def get_user(username):
