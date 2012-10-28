@@ -1,18 +1,21 @@
 import os
+from urlparse import urlsplit
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
 
-mongodb_uri = "mongodb://localhost:27017/"
-db_name = 'maumap'
-if os.environ.get('PORT'):
-    mongodb_uri = "ds031867.mongolab.com"
-    db_name = 'heroku_app3954850'
+MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017/maumap')
+parsed_mongo = urlsplit(MONGO_URL)
+db_name = parsed_mongo.path[1:]
+# Get your DB
+print('Connecting to %s [db %s]' % (MONGO_URL, db_name))
+db = Connection(MONGO_URL)[db_name]
+# Authenticate
+if '@' in MONGO_URL:
+    user_pass = parsed_mongo.netloc.split('@')[0].split(':')
+    db.authenticate(user_pass[0], user_pass[1])
 
-connection = Connection(mongodb_uri, 31867)
-db = connection[db_name]
-#db.authenticate("heroku_app3954850", "2o4lqlsq3mac57qj608kk8gbsp")
-
+# Shortcuts for collections.
 users = db.users
 binds = db.binds
 places = db.places
@@ -222,28 +225,6 @@ Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 def route_root():
     return redirect('/ui/index.html')
 
-@app.route("/local/")
-def route_local():
-    try:
-        port = str(int(request.args.get('port', '')))
-    except Exception, e:
-        return """<h1>Invalid port.</h1>"""
-
-    return """
-<h1>Authorizing local client...</h1>
-<form id="auth" method="post" action="http://localhost:%s/">
-<input type="hidden" name="browserid" value="%s">
-<input type="hidden" name="session" value="%s">
-<button type="submit">I'm impatient! Manually authorize me!</button>
-</form>
-<script>
-document.getElementById('auth').submit()
-</script>
-""" % (escape(port),
-    escape(request.cookies.get('browserid', '')),
-    escape(request.cookies.get('session', '')))
-
-
 # REST API
 # --------
 
@@ -297,9 +278,12 @@ def before_request():
     if request.args.get('sessionid'):
         load_sessionid(request.args.get('sessionid'))
 
-    # Prevent unauthorized /api/* access.
-    if request.path.startswith('/api/') and not get_session_email():
-        return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
+    # Prevent unauthorized access.
+    if not get_session_email():
+        if request.path.startswith('/api/'):
+            return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
+        if request.path.startswith('/ui/'):
+            return redirect('/login/');
 
 @app.route("/api/me", methods=['GET'])
 def route_me():
