@@ -312,7 +312,7 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        username = request.form['username']
+        #username = request.form['username'] #This seems silly... Do we really need this?
         email = get_session_email()
         # XXX: There may be a more efficient way to do this
         # XXX: May be a security hole here; haven't had time to look through it properly.
