@@ -41,7 +41,7 @@ from operator import itemgetter
 # post_user('tryan', 'Tim Ryan')
 
 def __format_user(user):
-    return {"username": user['username'], "alias": user['alias']}
+    return {"username": user['username'], "email": user['email'], "alias": user['alias']}
 
 def get_users(**crit):
     return [__format_user(user) for user in users.find(crit)]
@@ -52,12 +52,18 @@ def get_user(username):
         return __format_user(user)
     return None
 
-def put_user(username, alias = ''):
+def get_user_by_email(email):
+    user = users.find_one({"email": email})
+    if user:
+        return __format_user(user)
+    return None
+
+def put_user(username, email, alias = ''):
     if not re.compile('^[a-zA-Z\.]+$').match(username):
         raise Exception("Invalid username: %s" % username)
     if get_user(username):
         delete_user(username)
-    users.insert({"username": username, "alias": alias})
+    users.insert({"username": username, "email": email, "alias": alias})
     return username
 
 def delete_user(username):
@@ -253,7 +259,7 @@ def load_sessionid(sessionid):
         return user.get('email')
     return None
 
-def get_admin_users():
+def get_admin_emails():
     # TODO: XXX: This should be a legitimate database lookup
     return ['julian.ceipek@students.olin.edu', 'timothy.ryan@students.olin.edu']
 
@@ -306,12 +312,15 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can add a user with the username %s. You are %s" % (username, username, get_session_email()))
-
         username = request.form['username']
+        email = request.form['email']
+        # XXX: There may be a more efficient way to do this
+        if get_user_by_email(email):
+            return json_error(401, "A user with the email address %s already exists." % (email))
+        if email != get_session_email() and get_session_email() not in get_admin_emails():
+            return json_error(401, "Only %s and admins can add a new user with the email address %s. You are %s." % (email, email, get_session_email()))
         alias = request.form.get('alias', '')
-        put_user(username, alias)
+        put_user(username, email, alias)
         return jsonify(user=get_user(username))
 
     user = get_user(username)
@@ -328,8 +337,10 @@ def route_user(username):
     #   return jsonify(user=get_user(obj['username']))
 
     if request.method == "DELETE":
-        if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can delete a user with the username %s." % (username, username))
+        # XXX: There may be a more efficient way to do this
+        existing_user = get_user(username)
+        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+            return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username))
 
         delete_user(username)
         return '', 204
@@ -375,7 +386,7 @@ def route_place(id):
     #   return jsonify(place=get_place(ObjectId(id)))
 
     if request.method == "DELETE":
-        if get_session_email() in get_admin_users():
+        if get_session_email() in get_admin_emails():
             # TODO: Tim, should places also be associated with the person who created them (so that he/she can delete them as well?)
             delete_place(ObjectId(id))
             return '', 204
@@ -399,10 +410,11 @@ def route_binds():
             return jsonify(binds=get_binds(**crit))
 
     if request.method == 'POST':
-        if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can bind %s to a place." % (username, username))
-
         username = request.form['username']
+        # XXX: There may be a more efficient way to do this
+        existing_user = get_user(username)
+        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+            return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username))
         place = request.form['place']
         x = float(request.form['x'])
         y = float(request.form['y'])
@@ -428,8 +440,10 @@ def route_bind(id):
         return jsonify(bind=bind)
 
     if request.method == "DELETE":
-        if bind['username'] != get_session_email():
-            return json_error(401, "Only %s and admins can add delete binds by %s!" % (bind['username'], bind['username']))
+        # XXX: There may be a more efficient way to do this
+        existing_user = get_user(bind['username'])
+        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+            return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (bind['username'], bind['username']))
 
         delete_bind(ObjectId(id))
         return '', 204
@@ -446,8 +460,10 @@ def route_positions():
     if request.method == 'POST':
         username = request.form['username']
         bind = request.form['bind']
-        if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can add %s at a position!" % (username, username))
+        # XXX: There may be a more efficient way to do this
+        existing_user = get_user(bind['username'])
+        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+            return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username))
 
         if not get_user(username):
             return json_error(400, 'User with name %s does not exist.' % username)
@@ -466,8 +482,11 @@ def route_position(id):
         return jsonify(position=position)
 
     if request.method == "DELETE":
-        if username != get_session_email() and get_session_email() not in get_admin_users():
-            return json_error(401, "Only %s and admins can delete a position owned by %s!" % (username, username))
+        # XXX: It seems that username is not defined. How is this supposed to work?
+        # XXX: There may be a more efficient way to do this
+        existing_user = get_user(bind['username'])
+        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+            return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username))
 
         delete_position(username)
         return '', 204
