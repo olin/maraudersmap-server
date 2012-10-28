@@ -48,7 +48,7 @@ def get_users(**crit):
         try:
             print user['email']
         except:
-            user.update({'$set' : {'email', ''}})
+            user.update({"username": user['username'], "email": '', "alias": user['alias']})
 
     return [__format_user(user) for user in users.find(crit)]
 
