@@ -313,8 +313,9 @@ def route_users():
 def route_user(username):
     if request.method == 'PUT':
         username = request.form['username']
-        email = request.form['email']
+        email = get_session_email()
         # XXX: There may be a more efficient way to do this
+        # XXX: May be a security hole here; haven't had time to look through it properly.
         if get_user_by_email(email):
             return json_error(401, "A user with the email address %s already exists." % (email))
         if email != get_session_email() and get_session_email() not in get_admin_emails():
