@@ -104,7 +104,7 @@ def delete_place(id):
 # Binds
 
 def __format_bind(bind):
-    if bind['x'] == 'NaN':
+    if bind['x'] != bind['x']: #Check for NaN
         binds.remove({"bind": bind})
         return {"id": str(bind['_id']), "status": 'removed!'}
     return {"id": str(bind['_id']),
