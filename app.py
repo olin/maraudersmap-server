@@ -104,9 +104,6 @@ def delete_place(id):
 # Binds
 
 def __format_bind(bind):
-    if bind['x'] != bind['x']: #Check for NaN
-        binds.remove({"bind": bind})
-        return {"id": str(bind['_id']), "status": 'removed!'}
     return {"id": str(bind['_id']),
         "username": bind['username'],
         "place": get_place(bind['place']),
@@ -417,6 +414,8 @@ def route_binds():
         place = request.form['place']
         x = float(request.form['x'])
         y = float(request.form['y'])
+        if x != x or y != y:
+            return json_error(400, "Invalid X or Y coordinates.")
         signals = {}
         for k, v in request.form.items():
             grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
