@@ -106,7 +106,7 @@ def delete_place(id):
 def __format_bind(bind):
     return {"id": str(bind['_id']),
         "username": bind['username'],
-        "place": str(bind['place']),
+        "place": get_place(bind['place']),
         "x": bind['x'],
         "y": bind['y'],
         "signals": bind['signals']
