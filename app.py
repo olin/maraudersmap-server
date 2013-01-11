@@ -247,9 +247,9 @@ from urlparse import urlparse
 
 def load_session(sessionid):
     r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
-    if r.status_code == 200 and r.json and r.json.has_key('user'):
+    if r.status_code == 200 and r.json() and r.json().has_key('user'):
         session['sessionid'] = sessionid
-        session['user'] = r.json['user']
+        session['user'] = r.json()['user']
         return True
     return False
 
