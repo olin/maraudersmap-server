@@ -247,9 +247,9 @@ from urlparse import urlparse
 
 def load_session(sessionid):
     r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
-    if r.status_code == 200 and r.json() and r.json().has_key('user'):
+    if r.status_code == 200 and r.json and r.json.has_key('user'):
         session['sessionid'] = sessionid
-        session['user'] = r.json()['user']
+        session['user'] = r.json['user']
         return True
     return False
 
@@ -329,10 +329,10 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        username = request.form['username']
         if username != get_session_user()['id'] and get_session_email() not in get_admin_emails():
             return json_error(401, "Only %s and admins can add a new user with the email address %s. You are %s." % (email, email, get_session_email()))
         alias = request.form.get('alias', '')
+        email = request.form.get('email', '')
         put_user(username, email, alias)
         return jsonify(user=get_user(username))
 
