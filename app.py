@@ -231,6 +231,64 @@ Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 def route_root():
     return redirect('/ui/index.html')
 
+# Authentication
+# ----------------------
+
+if 'PORT' in os.environ:
+    HOSTNAME = 'map.olinapps.com'
+    HOST = 'map.olinapps.com'
+else:
+    HOSTNAME = 'localhost'
+    HOST = 'localhost:5000'
+
+import os, random, string, requests, json, re, time
+import hashlib, requests, json, time, os, re, urllib
+from urlparse import urlparse
+
+def load_session(sessionid):
+    r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
+    if r.status_code == 200 and r.json and r.json.has_key('user'):
+        session['sessionid'] = sessionid
+        session['user'] = r.json['user']
+        return True
+    return False
+
+def get_session_user():
+    return session.get('user')
+
+def get_session_email():
+    userinfo = get_session_user()
+    if not userinfo:
+        return None
+    return str(userinfo['id']) + '@' + str(userinfo['domain'])
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # External login.
+        if request.form.has_key('sessionid') and load_session(request.form.get('sessionid')):
+            return redirect('/')
+        else:
+            session.pop('sessionid', None)
+            return "Invalid session token: %s" % sessionid
+    return "Please authenticate with Olin Apps to view Directory."
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.pop('sessionid', None)
+    session.pop('user', None)
+    return redirect('/')
+
+# All pages are accessible, but enable user accounts.
+@app.before_request
+def before_request():
+    if urlparse(request.url).path == '/login':
+        return
+    if not get_session_user():
+        if request.args.has_key('sessionid') and load_session(request.args.get('sessionid')):
+            return
+        return redirect('http://olinapps.com/external?callback=http://%s/login' % HOST)
+
 # REST API
 # --------
 
@@ -246,55 +304,14 @@ def json_content(code = 200, **kargs):
 
 # Login
 
-import requests, sys
-
-def load_sessionid(sessionid):
-    # Read a sessionid query parameter and save it in our session.
-    # TODO: XXX: Cache sessionids so external auth doesn't hit fwol.in every time.
-    r = requests.get('http://fwol.in/api/me', headers={'host': 'fwol.in'}, params={'sessionid': request.args.get('sessionid')}) #TODO: XXX: Make this https when fwol.in supports it
-    if r.status_code == 200:
-        user = json.loads(r.text)
-        session['email'] = user.get('email')
-        session['sessionid'] = sessionid
-        return user.get('email')
-    return None
-
 def get_admin_emails():
     # TODO: XXX: This should be a legitimate database lookup
     return ['julian.ceipek@students.olin.edu', 'timothy.ryan@students.olin.edu']
 
-def get_session_email():
-    # We cache sessions using the session['email'] property.
-    # TODO: XXX: When a fwol.in read 401's, then we have to clear this property.
-    return session.get('email')
-
-@app.route('/login/')
-def route_login():
-    # Sessionids are stashed by the before_request function.
-    # Regardless of success, don't infinite loop if we've returned from fwol.in login.
-    if request.args.get('sessionid'):
-        return redirect('/')
-
-    # Redirect to fwol.in to begin authentication.
-    return redirect('http://fwol.in/login/?callback=http://map.olinapps.com/login/&external')
-
-@app.before_request
-def before_request():
-    # Load and stash sessionids in our current session.
-    if request.args.get('sessionid'):
-        load_sessionid(request.args.get('sessionid'))
-
-    # Prevent unauthorized access.
-    if not get_session_email():
-        if request.path.startswith('/api/'):
-            return Response(json.dumps({"error": 'Unauthorized.'}), 401, {'content-type': 'application/json'})
-        if request.path.startswith('/ui/'):
-            return redirect('/login/');
-
 @app.route("/api/me", methods=['GET'])
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
-    return Response(json.dumps(get_session_email()), 200, {'content-type': 'application/json'})
+    return Response(json.dumps({"user": get_session_user()}), 200, {'content-type': 'application/json'})
 
 # Entry point
 
