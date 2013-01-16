@@ -473,7 +473,12 @@ def route_positions():
         return jsonify(positions=get_positions(request.args.has_key('history'), request.args.has_key('extended'), **crit))
 
     if request.method == 'POST':
-        username = request.form['username']
+        # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
+        username = None
+        if not 'username' in request.form:
+            username = get_session_user()
+        else:
+            username = request.form['username']
         bindid = request.form['bind']
         bind = get_bind(ObjectId(bindid))
         # XXX: There may be a more efficient way to do this
