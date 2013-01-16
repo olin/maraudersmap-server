@@ -476,7 +476,7 @@ def route_positions():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_session_user()
+            username = get_session_user().id
         else:
             username = request.form['username']
         bindid = request.form['bind']
