@@ -256,6 +256,12 @@ def load_session(sessionid):
 def get_session_user():
     return session.get('user')
 
+def get_session_username():
+    userinfo = get_session_user()
+    if not userinfo:
+        return None
+    return userinfo['id']
+
 def get_session_email():
     userinfo = get_session_user()
     if not userinfo:
@@ -329,7 +335,7 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        if username != get_session_user()['id'] and get_session_email() not in get_admin_emails():
+        if username != get_session_username() and get_session_email() not in get_admin_emails():
             return json_error(401, "Only %s and admins can add a new user with the email address %s. You are %s." % (email, email, get_session_email()))
         alias = request.form.get('alias', '')
         email = request.form.get('email', '')
@@ -476,7 +482,7 @@ def route_positions():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_session_user().id
+            username = get_session_username()
         else:
             username = request.form['username']
         bindid = request.form['bind']
