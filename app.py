@@ -483,7 +483,7 @@ def route_positions():
 
         if not get_user(username):
             return json_error(400, 'User with name %s does not exist.' % username)
-        if not get_bind(ObjectId(bind)):
+        if not bind:
             return json_error(400, 'Bind with id %s does not exist.' % bind)
         id = post_position(username, ObjectId(bindid))
         return json_content(201, position=get_position(id))
