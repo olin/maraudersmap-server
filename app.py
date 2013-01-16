@@ -474,7 +474,8 @@ def route_positions():
 
     if request.method == 'POST':
         username = request.form['username']
-        bind = request.form['bind']
+        bindid = request.form['bind']
+        bind = get_bind(ObjectId(bindid))
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
         if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
@@ -484,7 +485,7 @@ def route_positions():
             return json_error(400, 'User with name %s does not exist.' % username)
         if not get_bind(ObjectId(bind)):
             return json_error(400, 'Bind with id %s does not exist.' % bind)
-        id = post_position(username, ObjectId(bind))
+        id = post_position(username, ObjectId(bindid))
         return json_content(201, position=get_position(id))
 
 @app.route("/api/positions/<id>", methods=['GET', 'DELETE'])
