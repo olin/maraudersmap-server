@@ -450,7 +450,7 @@ def route_binds():
 
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
-        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
             return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username))
         place = request.form['place']
         x = float(request.form['x'])
@@ -481,7 +481,7 @@ def route_bind(id):
     if request.method == "DELETE":
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
             return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (bind['username'], bind['username']))
 
         delete_bind(ObjectId(id))
