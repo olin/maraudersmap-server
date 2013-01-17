@@ -257,6 +257,7 @@ function updateUsers(usersObject, boundsWidth, boundsHeight, cb) {
                      var newUsers = {};
 
                      Api.getPositions(true, function (err, json) {
+                                      console.log(err);
                                       var extendedPositions = json.positions;
 
                                       for (var i=0; i < extendedPositions.length; i++) {
