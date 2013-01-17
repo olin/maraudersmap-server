@@ -64,16 +64,22 @@ window.setTimeout( function () {
                           if (queryDict.action == 'place' && queryDict.signals != null && postedPlace != null) {
                           var mouseX = eventObject.pageX - $('#map-img').offset().left;
                           var mouseY = eventObject.pageY - $('#map-img').offset().top;
-                          
-                          Api.postBind(queryDict.username, postedPlace.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
+
+                          Api.getActiveUser(function (err, json) {
+                            console.log(err);
+                            var username = json.user.id;
+                            Api.postBind(username, postedPlace.id, mouseX/imgWidth, mouseY/imgHeight, queryDict.signals, function (err, json) {
                                        console.log(err);          
-                                       //addPositionMarker(queryDict.username, mouseX, mouseY);
+                                       //addPositionMarker(username, mouseX, mouseY);
                                        var bind = json.bind;
                                        
-                                       Api.postPosition(queryDict.username, bind.id, function (err, json) {
+                                       Api.postPosition(username, bind.id, function (err, json) {
                                                         reloadMapRoot();
                                                         });
                                        });
+                          });
+                          
+
                           
                           }
                           

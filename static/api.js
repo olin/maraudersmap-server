@@ -8,6 +8,10 @@ function callback(call, cb) {
 
 var Api = window.Api = {};
 
+Api.getActiveUser = function (cb) {
+	callback($.get('/api/me'), cb);
+};
+
 Api.getUser = function (username, cb) {
 	callback($.get('/api/users/' + username), cb);
 };
