@@ -429,7 +429,13 @@ def route_binds():
             return jsonify(binds=get_binds(**crit))
 
     if request.method == 'POST':
-        username = request.form['username']
+        # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
+        username = None
+        if not 'username' in request.form:
+            username = get_session_username()
+        else:
+            username = request.form['username']
+
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
@@ -438,7 +444,7 @@ def route_binds():
         x = float(request.form['x'])
         y = float(request.form['y'])
         if x != x or y != y:
-            return json_error(400, "Invalid X or Y coordinates.")
+            return json_error(400, "Invalid (X,Y) coordinate.")
         signals = {}
         for k, v in request.form.items():
             grp = re.match(r'^signals\[(([a-f0-9]{2}:){5}[a-f0-9]{2})\]$', k.lower())
