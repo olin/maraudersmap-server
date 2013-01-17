@@ -507,7 +507,7 @@ def route_positions():
         bind = get_bind(ObjectId(bindid))
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
             return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username))
 
         if not get_user(username):
