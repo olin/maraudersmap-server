@@ -310,9 +310,12 @@ def json_content(code = 200, **kargs):
 
 # Login
 
-def get_admin_emails():
+def get_admin_users():
     # TODO: XXX: This should be a legitimate database lookup
-    return ['julian.ceipek@students.olin.edu', 'timothy.ryan@students.olin.edu']
+    return ['julian.ceipek', 'timothy.ryan']
+
+def is_authorized_for(username):
+    return (get_session_username() == username) or (username in get_admin_users())
 
 @app.route("/api/me", methods=['GET'])
 def route_me():
@@ -335,7 +338,7 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        if username != get_session_username() and get_session_email() not in get_admin_emails():
+        if is_authorized_for(username):
             return json_error(401, "Only %s and admins can add a new user with the email address %s. You are %s." % (email, email, get_session_email()))
         alias = request.form.get('alias', '')
         email = request.form.get('email', '')
@@ -358,7 +361,7 @@ def route_user(username):
     if request.method == "DELETE":
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
-        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username))
 
         delete_user(username)
@@ -405,7 +408,7 @@ def route_place(id):
     #   return jsonify(place=get_place(ObjectId(id)))
 
     if request.method == "DELETE":
-        if get_session_email() in get_admin_emails():
+        if get_session_username() in get_admin_users():
             # TODO: Tim, should places also be associated with the person who created them (so that he/she can delete them as well?)
             delete_place(ObjectId(id))
             return '', 204
@@ -450,7 +453,7 @@ def route_binds():
 
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
-        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username))
         place = request.form['place']
         x = float(request.form['x'])
@@ -481,7 +484,7 @@ def route_bind(id):
     if request.method == "DELETE":
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (bind['username'], bind['username']))
 
         delete_bind(ObjectId(id))
@@ -507,7 +510,7 @@ def route_positions():
         bind = get_bind(ObjectId(bindid))
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and (existing_user['email'] != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username))
 
         if not get_user(username):
@@ -530,7 +533,7 @@ def route_position(id):
         # XXX: It seems that username is not defined. How is this supposed to work?
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and (existing_user.email != get_session_email() and get_session_email() not in get_admin_emails()):
+        if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username))
 
         delete_position(username)
