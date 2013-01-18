@@ -338,7 +338,7 @@ def route_users():
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
 def route_user(username):
     if request.method == 'PUT':
-        if is_authorized_for(username):
+        if not is_authorized_for(username):
             return json_error(401, "Only %s and admins can add a new user with the username %s. You are %s." % (username, username, get_session_username()))
         alias = request.form.get('alias', '')
         email = request.form.get('email', '')
@@ -361,7 +361,7 @@ def route_user(username):
     if request.method == "DELETE":
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
-        if existing_user and is_authorized_for(username):
+        if existing_user and not is_authorized_for(username):
             return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username, get_session_username()))
 
         delete_user(username)
@@ -453,7 +453,7 @@ def route_binds():
 
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
-        if existing_user and is_authorized_for(username):
+        if existing_user and not is_authorized_for(username):
             return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username, get_session_username()))
         place = request.form['place']
         x = float(request.form['x'])
@@ -485,7 +485,7 @@ def route_bind(id):
         # XXX: There may be a more efficient way to do this
         username = bind['username']
         existing_user = get_user(username)
-        if existing_user and is_authorized_for(username):
+        if existing_user and not is_authorized_for(username):
             return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (username, username, get_session_username()))
 
         delete_bind(ObjectId(id))
@@ -511,7 +511,7 @@ def route_positions():
         bind = get_bind(ObjectId(bindid))
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
-        if existing_user and is_authorized_for(username):
+        if existing_user and not is_authorized_for(username):
             return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username, get_session_username()))
 
         if not get_user(username):
@@ -534,7 +534,7 @@ def route_position(id):
         # XXX: There may be a more efficient way to do this
         username = position['username']
         existing_user = get_user(username)
-        if existing_user and is_authorized_for(username):
+        if existing_user and not is_authorized_for(username):
             return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username, get_session_username()))
 
         delete_position(username)
