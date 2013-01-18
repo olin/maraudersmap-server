@@ -483,7 +483,8 @@ def route_bind(id):
 
     if request.method == "DELETE":
         # XXX: There may be a more efficient way to do this
-        existing_user = get_user(bind['username'])
+        username = bind['username']
+        existing_user = get_user(username)
         if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (bind['username'], bind['username']))
 
@@ -530,9 +531,9 @@ def route_position(id):
         return jsonify(position=position)
 
     if request.method == "DELETE":
-        # XXX: It seems that username is not defined. How is this supposed to work?
         # XXX: There may be a more efficient way to do this
-        existing_user = get_user(bind['username'])
+        username = position['username']
+        existing_user = get_user(username)
         if existing_user and is_authorized_for(username):
             return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username))
 
