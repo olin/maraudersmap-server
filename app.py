@@ -493,18 +493,6 @@ def route_binds():
         else:
             username = request.form['username']
 
-        print "DEBUGGING POST TO BINDS"
-        print "form:"
-        print request.form
-        print "username:"
-        print username
-        print "existing user:"
-        print get_user(username)
-        print "get_session_email():"
-        print get_session_email()
-        print "admin emails:"
-        print get_admin_emails()
-
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
