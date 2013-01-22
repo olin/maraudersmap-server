@@ -227,7 +227,49 @@ app = Flask(__name__, '/ui')
 
 Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 
+def crossdomain(origin=None, methods=None, headers=None,
+                max_age=21600, attach_to_all=True,
+                automatic_options=True):
+    if methods is not None:
+        methods = ', '.join(sorted(x.upper() for x in methods))
+    if headers is not None and not isinstance(headers, basestring):
+        headers = ', '.join(x.upper() for x in headers)
+    if not isinstance(origin, basestring):
+        origin = ', '.join(origin)
+    if isinstance(max_age, timedelta):
+        max_age = max_age.total_seconds()
+
+    def get_methods():
+        if methods is not None:
+            return methods
+
+        options_resp = current_app.make_default_options_response()
+        return options_resp.headers['allow']
+
+    def decorator(f):
+        def wrapped_function(*args, **kwargs):
+            if automatic_options and request.method == 'OPTIONS':
+                resp = current_app.make_default_options_response()
+            else:
+                resp = make_response(f(*args, **kwargs))
+            if not attach_to_all and request.method != 'OPTIONS':
+                return resp
+
+            h = resp.headers
+
+            h['Access-Control-Allow-Origin'] = origin
+            h['Access-Control-Allow-Methods'] = get_methods()
+            h['Access-Control-Max-Age'] = str(max_age)
+            if headers is not None:
+                h['Access-Control-Allow-Headers'] = headers
+            return resp
+
+        f.provide_automatic_options = False
+        return update_wrapper(wrapped_function, f)
+    return decorator
+
 @app.route("/")
+@crossdomain(origin='*')
 def route_root():
     return redirect('/ui/index.html')
 
@@ -269,6 +311,7 @@ def get_session_email():
     return str(userinfo['id']) + '@' + str(userinfo['domain'])
 
 @app.route('/login', methods=['GET', 'POST'])
+@crossdomain(origin='*')
 def login():
     if request.method == 'POST':
         # External login.
@@ -280,6 +323,7 @@ def login():
     return "Please authenticate with Olin Apps to view Directory."
 
 @app.route('/logout', methods=['GET', 'POST'])
+@crossdomain(origin='*')
 def logout():
     session.pop('sessionid', None)
     session.pop('user', None)
@@ -318,6 +362,7 @@ def is_authorized_for(username):
     return (get_session_username() == username) or (username in get_admin_users())
 
 @app.route("/api/me", methods=['GET'])
+@crossdomain(origin='*')
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
     return Response(json.dumps({"user": get_session_user()}), 200, {'content-type': 'application/json'})
@@ -325,17 +370,20 @@ def route_me():
 # Entry point
 
 @app.route("/api/")
+@crossdomain(origin='*')
 def route_index():
     return jsonify(binds='/binds/', users='/users', places='/places/', positions='/positions/')
 
 # Users
 
 @app.route("/api/users/", methods=['GET'])
+@crossdomain(origin='*')
 def route_users():
     if request.method == 'GET':
         return jsonify(users=get_users())
 
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
+@crossdomain(origin='*')
 def route_user(username):
     if request.method == 'PUT':
         if not is_authorized_for(username):
@@ -370,6 +418,7 @@ def route_user(username):
 # Places
 
 @app.route("/api/places/", methods=['GET', 'POST'])
+@crossdomain(origin='*')
 def route_places():
     if request.method == 'GET':
         critkeys = ['alias', 'floor', 'name', 'alias']
@@ -384,6 +433,7 @@ def route_places():
         return json_content(201, place=get_place(id))
 
 @app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE'])
+@crossdomain(origin='*')
 def route_place(id):
     place = get_place(ObjectId(id))
     if not place:
@@ -416,6 +466,7 @@ def route_place(id):
 # Binds
 
 @app.route("/api/binds/", methods=['GET', 'POST'])
+@crossdomain(origin='*')
 def route_binds():
     if request.method == 'GET':
         critkeys = ['username', 'place', 'x', 'y']
@@ -473,6 +524,7 @@ def route_binds():
         return json_content(201, bind=get_bind(id))
 
 @app.route("/api/binds/<id>", methods=['GET', 'DELETE'])
+@crossdomain(origin='*')
 def route_bind(id):
     bind = get_bind(ObjectId(id))
     if not bind:
@@ -494,6 +546,7 @@ def route_bind(id):
 # Positions
 
 @app.route("/api/positions/", methods=['GET', 'POST'])
+@crossdomain(origin='*')
 def route_positions():
     if request.method == 'GET':
         critkeys = ['username', 'bind']
@@ -522,6 +575,7 @@ def route_positions():
         return json_content(201, position=get_position(id))
 
 @app.route("/api/positions/<id>", methods=['GET', 'DELETE'])
+@crossdomain(origin='*')
 def route_position(id):
     position = get_position(ObjectId(id))
     if not position:
