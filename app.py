@@ -315,7 +315,6 @@ def get_session_email():
     return str(userinfo['id']) + '@' + str(userinfo['domain'])
 
 @app.route('/login', methods=['GET', 'POST'])
-@crossdomain(origin='*')
 def login():
     if request.method == 'POST':
         # External login.
@@ -327,7 +326,6 @@ def login():
     return "Please authenticate with Olin Apps to view Directory."
 
 @app.route('/logout', methods=['GET', 'POST'])
-@crossdomain(origin='*')
 def logout():
     session.pop('sessionid', None)
     session.pop('user', None)
@@ -365,7 +363,7 @@ def get_admin_users():
 def is_authorized_for(username):
     return (get_session_username() == username) or (username in get_admin_users())
 
-@app.route("/api/me", methods=['GET'])
+@app.route("/api/me", methods=['GET', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
@@ -380,13 +378,13 @@ def route_index():
 
 # Users
 
-@app.route("/api/users/", methods=['GET'])
+@app.route("/api/users/", methods=['GET', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_users():
     if request.method == 'GET':
         return jsonify(users=get_users())
 
-@app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE'])
+@app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_user(username):
     if request.method == 'PUT':
@@ -421,7 +419,7 @@ def route_user(username):
 
 # Places
 
-@app.route("/api/places/", methods=['GET', 'POST'])
+@app.route("/api/places/", methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_places():
     if request.method == 'GET':
@@ -436,7 +434,7 @@ def route_places():
         id = post_place(floor, name, alias)
         return json_content(201, place=get_place(id))
 
-@app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE'])
+@app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_place(id):
     place = get_place(ObjectId(id))
@@ -469,7 +467,7 @@ def route_place(id):
 
 # Binds
 
-@app.route("/api/binds/", methods=['GET', 'POST'])
+@app.route("/api/binds/", methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_binds():
     if request.method == 'GET':
@@ -527,7 +525,7 @@ def route_binds():
         id = post_bind(username, ObjectId(place), x, y, signals)
         return json_content(201, bind=get_bind(id))
 
-@app.route("/api/binds/<id>", methods=['GET', 'DELETE'])
+@app.route("/api/binds/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_bind(id):
     bind = get_bind(ObjectId(id))
@@ -549,7 +547,7 @@ def route_bind(id):
 
 # Positions
 
-@app.route("/api/positions/", methods=['GET', 'POST'])
+@app.route("/api/positions/", methods=['GET', 'POST', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_positions():
     if request.method == 'GET':
@@ -578,7 +576,7 @@ def route_positions():
         id = post_position(username, ObjectId(bindid))
         return json_content(201, position=get_position(id))
 
-@app.route("/api/positions/<id>", methods=['GET', 'DELETE'])
+@app.route("/api/positions/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
 @crossdomain(origin='*')
 def route_position(id):
     position = get_position(ObjectId(id))
