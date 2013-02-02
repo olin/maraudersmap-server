@@ -3,8 +3,10 @@ from urlparse import urlsplit
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
+from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_session_user
+from flask.ext.jsonpify import jsonify
 
-MONGO_URL = os.getenv('MONGOLAB_URI', 'mongodb://localhost:27017/maumap')
+MONGO_URL = os.getenv('MONGOLAB_URI', "mongodb://localhost:27017/maumap")
 parsed_mongo = urlsplit(MONGO_URL)
 db_name = parsed_mongo.path[1:]
 # Get your DB
@@ -33,18 +35,23 @@ users.create_index("username", unique=True)
 # Intermediate API
 # ----------------
 
-import json, re, numpy, copy, datetime, os
+import re
+import numpy
+import copy
+import datetime
+import os
 from operator import itemgetter
-#from jsonpatch import JsonPatch, JsonPatchException
+
 
 # Users
 # post_user('tryan', 'Tim Ryan')
-
 def __format_user(user):
     return {"username": user['username'], "email": user['email'], "alias": user['alias']}
 
+
 def get_users(**crit):
     return [__format_user(user) for user in users.find(crit)]
+
 
 def get_user(username):
     user = users.find_one({"username": username})
@@ -52,13 +59,15 @@ def get_user(username):
         return __format_user(user)
     return None
 
+
 def get_user_by_email(email):
     user = users.find_one({"email": email})
     if user:
         return __format_user(user)
     return None
 
-def put_user(username, email, alias = ''):
+
+def put_user(username, email, alias=''):
     if not re.compile('^[a-zA-Z\.]+$').match(username):
         raise Exception("Invalid username: %s" % username)
     if get_user(username):
@@ -66,17 +75,20 @@ def put_user(username, email, alias = ''):
     users.insert({"username": username, "email": email, "alias": alias})
     return username
 
+
 def delete_user(username):
     users.remove({"username": username})
 
+
 # Places
 # post_place('EH4', 'Room 419', 'The Sky Fortress')
-
 def __format_place(loc):
     return {"id": str(loc['_id']), "floor": loc['floor'], "name": loc['name'], "alias": loc['alias']}
 
+
 def get_places(**crit):
     return [__format_place(place) for place in places.find(crit)]
+
 
 def get_place(id):
     loc = places.find_one(id)
@@ -84,25 +96,28 @@ def get_place(id):
         return __format_place(loc)
     return None
 
-def put_place(id, floor, name, alias = ''):
+
+def put_place(id, floor, name, alias=''):
     return places.update({"_id": id}, {
         "floor": floor,
         "name": name,
         "alias": alias
         })
 
-def post_place(floor, name, alias = ''):
+
+def post_place(floor, name, alias=''):
     return places.insert({
         "floor": floor,
         "name": name,
         "alias": alias
         })
 
+
 def delete_place(id):
     places.remove(id)
 
-# Binds
 
+# Binds
 def __format_bind(bind):
     return {"id": str(bind['_id']),
         "username": bind['username'],
@@ -112,8 +127,10 @@ def __format_bind(bind):
         "signals": bind['signals']
         }
 
+
 def get_binds(**crit):
     return [__format_bind(bind) for bind in binds.find(crit)]
+
 
 def get_bind(id):
     bind = binds.find_one(id)
@@ -121,12 +138,14 @@ def get_bind(id):
         return __format_bind(bind)
     return None
 
+
 def post_bind(username, place, x, y, signals):
     return binds.insert({"username": username,
         "place": place,
         "x": float(x),
         "y": float(y),
-        "signals": {k.lower(): v for k, v in signals.items()}})
+        "signals": {k.lower(): v for k,v in signals.items()}
+        })
 
 def delete_bind(id):
     binds.remove(id)
@@ -147,8 +166,8 @@ def nearest_binds(signals, limit = 10, **crit):
         pt2 = numpy.array([float(signalsB.get(k, 0)) for k in macs])
 
         dist = numpy.dot(
-            pt1/numpy.linalg.norm(pt1),
-            pt2/numpy.linalg.norm(pt2))
+            pt1/ numpy.linalg.norm(pt1),
+            pt2/ numpy.linalg.norm(pt2))
         matches.append((dist, bind))
 
     return [__format_bind(x[1]) for x in sorted(matches, key=itemgetter(0), reverse=True)[0:limit]]
@@ -222,65 +241,6 @@ def delete_position(username):
 # Server
 # ------
 
-from flask import Flask, jsonify, make_response, request, redirect, url_for, escape, Response, session
-app = Flask(__name__, '/ui')
-
-Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
-
-from datetime import timedelta
-from flask import make_response, request, current_app
-from functools import update_wrapper
-
-def crossdomain(origin=None, methods=None, headers=None,
-                max_age=21600, attach_to_all=True,
-                automatic_options=True):
-    if methods is not None:
-        methods = ', '.join(sorted(x.upper() for x in methods))
-    if headers is not None and not isinstance(headers, basestring):
-        headers = ', '.join(x.upper() for x in headers)
-    if not isinstance(origin, basestring):
-        origin = ', '.join(origin)
-    if isinstance(max_age, timedelta):
-        max_age = max_age.total_seconds()
-
-    def get_methods():
-        if methods is not None:
-            return methods
-
-        options_resp = current_app.make_default_options_response()
-        return options_resp.headers['allow']
-
-    def decorator(f):
-        def wrapped_function(*args, **kwargs):
-            if automatic_options and request.method == 'OPTIONS':
-                resp = current_app.make_default_options_response()
-            else:
-                resp = make_response(f(*args, **kwargs))
-            if not attach_to_all and request.method != 'OPTIONS':
-                return resp
-
-            h = resp.headers
-
-            h['Access-Control-Credentials'] = "true"
-            h['Access-Control-Allow-Origin'] = "*"
-            h['Access-Control-Allow-Methods'] = "HEAD, GET, POST, PUT, DELETE, OPTIONS"
-            h['Access-Control-Max-Age'] = str(max_age)
-            if headers is not None:
-                h['Access-Control-Allow-Headers'] = headers
-            return resp
-
-        f.provide_automatic_options = False
-        return update_wrapper(wrapped_function, f)
-    return decorator
-
-@app.route("/")
-@crossdomain(origin='*')
-def route_root():
-    return redirect('/ui/index.html')
-
-# Authentication
-# ----------------------
-
 if 'PORT' in os.environ:
     HOSTNAME = 'map.olinapps.com'
     HOST = 'map.olinapps.com'
@@ -288,105 +248,60 @@ else:
     HOSTNAME = 'localhost'
     HOST = 'localhost:5000'
 
-import os, random, string, requests, json, re, time
-import hashlib, requests, json, time, os, re, urllib
-from urlparse import urlparse
+from flask import Flask, make_response, request, redirect, url_for, escape, Response, session
+app = Flask(__name__, '/ui')
 
-def load_session(sessionid):
-    r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
-    if r.status_code == 200 and r.json and r.json.has_key('user'):
-        session['sessionid'] = sessionid
-        session['user'] = r.json['user']
-        return True
-    return False
+oa = OlinAuth(app, HOST)
 
-def get_session_user():
-    return session.get('user')
+Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 
-def get_session_username():
-    userinfo = get_session_user()
-    if not userinfo:
-        return None
-    return userinfo['id']
+from datetime import timedelta
+from flask import make_response, request, current_app
+from functools import update_wrapper
 
-def get_session_email():
-    userinfo = get_session_user()
-    if not userinfo:
-        return None
-    return str(userinfo['id']) + '@' + str(userinfo['domain'])
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        # External login.
-        if request.form.has_key('sessionid') and load_session(request.form.get('sessionid')):
-            return redirect('/')
-        else:
-            session.pop('sessionid', None)
-            return "Invalid session token: %s" % sessionid
-    return "Please authenticate with Olin Apps to view Directory."
+@app.route("/")
+def route_root():
+    return redirect('/ui/index.html')
 
-@app.route('/logout', methods=['GET', 'POST'])
-def logout():
-    session.pop('sessionid', None)
-    session.pop('user', None)
-    return redirect('/')
-
-# All pages are accessible, but enable user accounts.
-@app.before_request
-def before_request():
-    if urlparse(request.url).path == '/login':
-        return
-    if not get_session_user():
-        if request.args.has_key('sessionid') and load_session(request.args.get('sessionid')):
-            return
-        return redirect('http://olinapps.com/external?callback=http://%s/login' % HOST)
 
 # REST API
 # --------
 
 def json_error(code, msg):
-    response = make_response(json.dumps({"error": code, "message": msg}), code)
-    response.headers['Content-Type'] = 'application/json'
-    return response
+    return jsonify(error=code, message=msg), code
 
-def json_content(code = 200, **kargs):
-    response = make_response(json.dumps(kargs), code)
-    response.headers['Content-Type'] = 'application/json'
-    return response
 
 # Login
-
 def get_admin_users():
     # TODO: XXX: This should be a legitimate database lookup
     return ['julian.ceipek', 'timothy.ryan']
 
-def is_authorized_for(username):
-    return (get_session_username() == username) or (username in get_admin_users())
 
 @app.route("/api/me", methods=['GET', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
-    return Response(json.dumps({"user": get_session_user()}), 200, {'content-type': 'application/json'})
+
+    return jsonify(user=get_session_user()), 200
+
 
 # Entry point
-
 @app.route("/api/")
-@crossdomain(origin='*')
 def route_index():
     return jsonify(binds='/binds/', users='/users', places='/places/', positions='/positions/')
 
-# Users
 
+# Users
 @app.route("/api/users/", methods=['GET', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_users():
     if request.method == 'GET':
         return jsonify(users=get_users())
 
+
 @app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_user(username):
     if request.method == 'PUT':
         if not is_authorized_for(username):
@@ -418,10 +333,10 @@ def route_user(username):
         delete_user(username)
         return '', 204
 
-# Places
 
+# Places
 @app.route("/api/places/", methods=['GET', 'POST', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_places():
     if request.method == 'GET':
         critkeys = ['alias', 'floor', 'name', 'alias']
@@ -433,10 +348,11 @@ def route_places():
         name = request.form['name']
         alias = request.form.get('alias', '')
         id = post_place(floor, name, alias)
-        return json_content(201, place=get_place(id))
+        return jsonify(place=get_place(id)), 201
+
 
 @app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_place(id):
     place = get_place(ObjectId(id))
     if not place:
@@ -451,7 +367,7 @@ def route_place(id):
             request.form['floor'],
             request.form['name'],
             request.form.get('alias', ''))
-        return json_content(200, place=get_place(ObjectId(id)))
+        return jsonify(place=get_place(ObjectId(id))), 200
 
     #TODO:
     #if request.method == 'PATCH':
@@ -466,10 +382,10 @@ def route_place(id):
             delete_place(ObjectId(id))
             return '', 204
 
-# Binds
 
+# Binds
 @app.route("/api/binds/", methods=['GET', 'POST', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_binds():
     if request.method == 'GET':
         critkeys = ['username', 'place', 'x', 'y']
@@ -512,10 +428,11 @@ def route_binds():
         if not get_place(ObjectId(place)):
             return json_error(400, 'Place with id %s does not exist.' % place)
         id = post_bind(username, ObjectId(place), x, y, signals)
-        return json_content(201, bind=get_bind(id))
+        return jsonify(bind=get_bind(id)), 201
+
 
 @app.route("/api/binds/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_bind(id):
     bind = get_bind(ObjectId(id))
     if not bind:
@@ -534,15 +451,15 @@ def route_bind(id):
         delete_bind(ObjectId(id))
         return '', 204
 
-# Positions
 
+# Positions
 @app.route("/api/positions/", methods=['GET', 'POST', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_positions():
     if request.method == 'GET':
         critkeys = ['username', 'bind']
         crit = {key: request.args[key] for key in list(set(critkeys) & set(request.args.keys()))}
-        return jsonify(positions=get_positions(request.args.has_key('history'), request.args.has_key('extended'), **crit))
+        return jsonify(positions=get_positions('history' in request.args, 'extended' in request.args, **crit))
 
     if request.method == 'POST':
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
@@ -563,10 +480,11 @@ def route_positions():
         if not bind:
             return json_error(400, 'Bind with id %s does not exist.' % bind)
         id = post_position(username, ObjectId(bindid))
-        return json_content(201, position=get_position(id))
+        return jsonify(position=get_position(id)), 201
+
 
 @app.route("/api/positions/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
-@crossdomain(origin='*')
+@auth_required
 def route_position(id):
     position = get_position(ObjectId(id))
     if not position:
@@ -614,6 +532,8 @@ print json.dumps(get_positions())
 # Launch
 
 if __name__ == "__main__":
+
+    
     app.debug = True
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
