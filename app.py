@@ -3,7 +3,7 @@ from urlparse import urlsplit
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
-from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_session_user
+from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_current_user
 from flask.ext.jsonpify import jsonify
 
 MONGO_URL = os.getenv('MONGOLAB_URI', "mongodb://localhost:27017/maumap")
@@ -260,6 +260,10 @@ from flask import make_response, request, current_app
 from functools import update_wrapper
 
 
+def is_authorized_for(username):
+    return (get_current_user().get('id') == username) or (get_current_user().get('id') in get_admin_users())
+
+
 @app.route("/")
 def route_root():
     return redirect('/ui/index.html')
@@ -275,15 +279,14 @@ def json_error(code, msg):
 # Login
 def get_admin_users():
     # TODO: XXX: This should be a legitimate database lookup
-    return ['julian.ceipek', 'timothy.ryan']
+    return ['julian.ceipek', 'timothy.ryan', 'william.dolphin']
 
 
-@app.route("/api/me", methods=['GET', 'OPTIONS'])
+@app.route("/api/me/", methods=['GET', 'OPTIONS'])
 @auth_required
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
-
-    return jsonify(user=get_session_user()), 200
+    return jsonify(user=get_current_user()), 200
 
 
 # Entry point
@@ -300,12 +303,12 @@ def route_users():
         return jsonify(users=get_users())
 
 
-@app.route("/api/users/<username>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
+@app.route("/api/users/<username>/", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 @auth_required
 def route_user(username):
     if request.method == 'PUT':
         if not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add a new user with the username %s. You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can add a new user with the username %s. You are %s." % (username, username, get_current_username()))
         alias = request.form.get('alias', '')
         email = request.form.get('email', '')
         put_user(username, email, alias)
@@ -328,7 +331,7 @@ def route_user(username):
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username, get_current_username()))
 
         delete_user(username)
         return '', 204
@@ -377,7 +380,7 @@ def route_place(id):
     #   return jsonify(place=get_place(ObjectId(id)))
 
     if request.method == "DELETE":
-        if get_session_username() in get_admin_users():
+        if get_current_username() in get_admin_users():
             # TODO: Tim, should places also be associated with the person who created them (so that he/she can delete them as well?)
             delete_place(ObjectId(id))
             return '', 204
@@ -405,14 +408,14 @@ def route_binds():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_session_username()
+            username = get_current_username()
         else:
             username = request.form['username']
 
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username, get_current_username()))
         place = request.form['place']
         x = float(request.form['x'])
         y = float(request.form['y'])
@@ -446,7 +449,7 @@ def route_bind(id):
         username = bind['username']
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (username, username, get_current_username()))
 
         delete_bind(ObjectId(id))
         return '', 204
@@ -465,7 +468,7 @@ def route_positions():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_session_username()
+            username = get_current_username()
         else:
             username = request.form['username']
         bindid = request.form['bind']
@@ -473,7 +476,7 @@ def route_positions():
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username, get_current_username()))
 
         if not get_user(username):
             return json_error(400, 'User with name %s does not exist.' % username)
@@ -498,7 +501,7 @@ def route_position(id):
         username = position['username']
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username, get_session_username()))
+            return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username, get_current_username()))
 
         delete_position(username)
         return '', 204
