@@ -33,6 +33,10 @@ and/or restarted relatively easily
 
 ## Setup
 
+### Linking in the UI Submodule (required for development and running):
+    $ git submodule init
+    $ git submodule update
+
 ### When first running locally, do:
 
     sudo pip install virtualenv
