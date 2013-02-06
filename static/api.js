@@ -8,10 +8,6 @@ function callback(call, cb) {
 
 var Api = window.Api = {};
 
-Api.getActiveUser = function (cb) {
-	callback($.get('/api/me'), cb);
-};
-
 Api.getUser = function (username, cb) {
 	callback($.get('/api/users/' + username), cb);
 };
@@ -24,21 +20,8 @@ Api.getPlace = function (id, cb) {
 	callback($.get('/api/places/' + id), cb);
 };
 
-Api.getBinds = function (cb) {
-	callback($.get('/api/binds/'), cb);
-};
-
-// If extended == true, will expand place and bind in request's return
-Api.getPositions = function (extended, cb) {
-        if (cb == null) {
-          cb = extended;
-          extended = false;
-        }
-        if (extended) {
-	  callback($.get('/api/positions/?extended'), cb);
-        } else {
-	  callback($.get('/api/positions/'), cb);
-        }
+Api.getPositions = function (cb) {
+	callback($.get('/api/positions/'), cb);
 };
 
 Api.getPlaces = function (criteria, cb) {
