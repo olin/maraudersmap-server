@@ -44,6 +44,13 @@ from operator import itemgetter
 
 
 # Users
+
+def get_current_username():
+    user = get_current_user()
+    if user:
+        return user['id']
+    return None
+
 # post_user('tryan', 'Tim Ryan')
 def __format_user(user):
     return {"username": user['username'], "email": user['email'], "alias": user['alias']}
@@ -308,7 +315,7 @@ def route_users():
 def route_user(username):
     if request.method == 'PUT':
         if not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add a new user with the username %s. You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can add a new user with the username %s. You are %s." % (username, username, get_current_username()))
         alias = request.form.get('alias', '')
         email = request.form.get('email', '')
         put_user(username, email, alias)
@@ -331,7 +338,7 @@ def route_user(username):
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can delete a user with the username %s. You are %s." % (username, username, get_current_username()))
 
         delete_user(username)
         return '', 204
@@ -380,7 +387,7 @@ def route_place(id):
     #   return jsonify(place=get_place(ObjectId(id)))
 
     if request.method == "DELETE":
-        if get_current_user() in get_admin_users():
+        if get_current_username() in get_admin_users():
             # TODO: Tim, should places also be associated with the person who created them (so that he/she can delete them as well?)
             delete_place(ObjectId(id))
             return '', 204
@@ -408,14 +415,14 @@ def route_binds():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_current_user()
+            username = get_current_username()
         else:
             username = request.form['username']
 
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can bind %s to a place. You are %s." % (username, username, get_current_username()))
         place = request.form['place']
         x = float(request.form['x'])
         y = float(request.form['y'])
@@ -449,7 +456,7 @@ def route_bind(id):
         username = bind['username']
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can add delete binds by %s! You are %s." % (username, username, get_current_username()))
 
         delete_bind(ObjectId(id))
         return '', 204
@@ -468,7 +475,7 @@ def route_positions():
         # The only reason you would want to set username explicitly is if you are an admin and want to post as a user
         username = None
         if not 'username' in request.form:
-            username = get_current_user()
+            username = get_current_username()
         else:
             username = request.form['username']
         bindid = request.form['bind']
@@ -476,7 +483,7 @@ def route_positions():
         # XXX: There may be a more efficient way to do this
         existing_user = get_user(bind['username'])
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can add %s at a position! You are %s." % (username, username, get_current_username()))
 
         if not get_user(username):
             return json_error(400, 'User with name %s does not exist.' % username)
@@ -501,7 +508,7 @@ def route_position(id):
         username = position['username']
         existing_user = get_user(username)
         if existing_user and not is_authorized_for(username):
-            return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username, get_current_user()))
+            return json_error(401, "Only %s and admins can delete a position owned by %s! You are %s." % (username, username, get_current_username()))
 
         delete_position(username)
         return '', 204
