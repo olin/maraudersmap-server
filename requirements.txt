@@ -2,6 +2,5 @@ Flask==0.9
 pymongo==2.4.2
 requests==1.1.0
 flask-jsonpify==1.0
-Flask-OlinAuth==1.0.1
 numpy==1.6.2
 Flask-Testing==0.4
