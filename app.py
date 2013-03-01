@@ -5,6 +5,7 @@ from bson.code import Code
 from bson.objectid import ObjectId
 # from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_current_user
 from flask.ext.jsonpify import jsonify
+import requests
 
 MONGO_URL = os.getenv('MONGOLAB_URI', "mongodb://localhost:27017/maumap")
 parsed_mongo = urlsplit(MONGO_URL)
@@ -279,7 +280,7 @@ def route_root():
 from urlparse import urlparse
 
 def load_session(sessionid):
-    r = request.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
+    r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
     if r.status_code == 200 and r.json and r.json.has_key('user'):
         session['sessionid'] = sessionid
         session['user'] = r.json['user']
