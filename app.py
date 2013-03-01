@@ -283,7 +283,7 @@ def load_session(sessionid):
     r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
     if r.json:
         js = r.json()
-        if r.status_code == 200 'user' in js:
+        if r.status_code == 200 and 'user' in js:
             session['sessionid'] = sessionid
             session['user'] = js['user']
             return True
