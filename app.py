@@ -281,12 +281,14 @@ from urlparse import urlparse
 
 def load_session(sessionid):
     r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
-    if r.json:
+    try:
         js = r.json()
         if r.status_code == 200 and 'user' in js:
             session['sessionid'] = sessionid
             session['user'] = js['user']
             return True
+    except:
+        print "Error: Json could not be decoded from api/me."
     return False
 
 def get_current_user():
