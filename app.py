@@ -3,7 +3,7 @@ from urlparse import urlsplit
 from pymongo import Connection, ASCENDING, DESCENDING
 from bson.code import Code
 from bson.objectid import ObjectId
-from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_current_user
+# from flask.ext.olinauth import OlinAuth, auth_required, current_user, get_current_user
 from flask.ext.jsonpify import jsonify
 
 MONGO_URL = os.getenv('MONGOLAB_URI', "mongodb://localhost:27017/maumap")
@@ -258,8 +258,6 @@ else:
 from flask import Flask, make_response, request, redirect, url_for, escape, Response, session
 app = Flask(__name__, '/ui')
 
-oa = OlinAuth(app, HOST)
-
 Flask.secret_key = os.environ.get('FLASK_SESSION_KEY', 'test-key-please-ignore')
 
 from datetime import timedelta
@@ -274,6 +272,69 @@ def is_authorized_for(username):
 @app.route("/")
 def route_root():
     return redirect('/ui/index.html')
+
+# Authentication temporarily
+# --------------------
+
+from urlparse import urlparse
+
+def load_session(sessionid):
+    r = requests.get('http://olinapps.com/api/me', params={"sessionid": sessionid})
+    if r.status_code == 200 and r.json and r.json.has_key('user'):
+        session['sessionid'] = sessionid
+        session['user'] = r.json['user']
+        return True
+    return False
+
+def get_current_user():
+    return session.get('user')
+
+def get_session_email():
+    userinfo = get_current_user()
+    if not userinfo:
+        return None
+    return str(userinfo['id']) + '@' + str(userinfo['domain'])
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # External login.
+        if request.form.has_key('sessionid') and load_session(request.form.get('sessionid')):
+            return redirect('/')
+        else:
+            session.pop('sessionid', None)
+            return "Invalid session token: %s" % sessionid
+    return "Please authenticate with Olin Apps to view Directory."
+
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.pop('sessionid', None)
+    session.pop('user', None)
+    return redirect('/')
+
+# All pages are accessible, but enable user accounts.
+@app.before_request
+def before_request():
+    if urlparse(request.url).path == '/login':
+        return
+    if not get_current_user():
+        if request.args.has_key('sessionid') and load_session(request.args.get('sessionid')):
+            return
+        if urlparse(request.url).path.startswith('/api/'):
+            return Response(json.dumps({"error": "Not authorized"}), 401, {"Content-Type": "application/json"})
+        return redirect('http://olinapps.com/external?callback=http://%s/login' % HOST)
+
+@app.after_request
+def after_request(response):
+    if urlparse(request.url).path.startswith('/api/') and request.headers.get('Origin'):
+        remotehost = urlparse(request.headers.get('Origin')).netloc
+        if re.match(r'^localhost:[0-9]+$', remotehost) or re.match(r'^[^.]+\.olinapps\.com', remotehost):
+            response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+        response.headers.add('Access-Control-Allow-Methods', 'POST, GET, PUT, PATCH, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Cookie')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '1728000')
+    return response
 
 
 # REST API
@@ -290,7 +351,7 @@ def get_admin_users():
 
 
 @app.route("/api/me/", methods=['GET', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_me():
     # TODO: XXX: fwolin/api/me returns an object now, this should too really.
     return jsonify(user=get_current_user()), 200
@@ -304,14 +365,14 @@ def route_index():
 
 # Users
 @app.route("/api/users/", methods=['GET', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_users():
     if request.method == 'GET':
         return jsonify(users=get_users())
 
 
 @app.route("/api/users/<username>/", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_user(username):
     if request.method == 'PUT':
         if not is_authorized_for(username):
@@ -346,7 +407,7 @@ def route_user(username):
 
 # Places
 @app.route("/api/places/", methods=['GET', 'POST', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_places():
     if request.method == 'GET':
         critkeys = ['alias', 'floor', 'name', 'alias']
@@ -362,7 +423,7 @@ def route_places():
 
 
 @app.route("/api/places/<id>", methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_place(id):
     place = get_place(ObjectId(id))
     if not place:
@@ -395,7 +456,7 @@ def route_place(id):
 
 # Binds
 @app.route("/api/binds/", methods=['GET', 'POST', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_binds():
     if request.method == 'GET':
         critkeys = ['username', 'place', 'x', 'y']
@@ -442,7 +503,7 @@ def route_binds():
 
 
 @app.route("/api/binds/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_bind(id):
     bind = get_bind(ObjectId(id))
     if not bind:
@@ -464,7 +525,7 @@ def route_bind(id):
 
 # Positions
 @app.route("/api/positions/", methods=['GET', 'POST', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_positions():
     if request.method == 'GET':
         critkeys = ['username', 'bind']
@@ -494,7 +555,7 @@ def route_positions():
 
 
 @app.route("/api/positions/<id>", methods=['GET', 'DELETE', 'OPTIONS'])
-@auth_required
+#@auth_required
 def route_position(id):
     position = get_position(ObjectId(id))
     if not position:
